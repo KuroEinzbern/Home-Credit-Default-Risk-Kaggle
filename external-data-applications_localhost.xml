@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+  <object-set>
+    <table path="applications.public.application_train">
+      <table path="applications.public.bureau" name="virtual_foreign_key_name" from="sk_id_curr" to="sk_id_bureau"/>
+    </table>
+    <table path="applications.public.bureau">
+      <table path="applications.public.application_train" name="virtual_foreign_key_name" from="sk_id_bureau" to="sk_id_curr"/>
+      <table path="applications.public.bureau_balance" name="virtual_foreign_key_name_2" from="sk_id_bureau" to="sk_id_bureau"/>
+    </table>
+    <table path="applications.public.bureau_balance">
+      <table path="applications.public.bureau" name="virtual_foreign_key_name" from="sk_id_bureau" to="sk_id_bureau"/>
+    </table>
+  </object-set>
+</data>
