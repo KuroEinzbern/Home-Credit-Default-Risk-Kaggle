@@ -1,0 +1,649 @@
+{
+    "application": {
+        "SK_ID_CURR": {
+            "type": "categorical"
+        },
+        "TARGET": {
+            "type": "categorical"
+        },
+        "NAME_CONTRACT_TYPE": {
+            "type": "categorical"
+        },
+        "CODE_GENDER": {
+            "type": "categorical"
+        },
+        "FLAG_OWN_CAR": {
+            "type": "categorical"
+        },
+        "FLAG_OWN_REALTY": {
+            "type": "categorical"
+        },
+        "CNT_CHILDREN": {
+            "type": "numerical"
+        },
+        "AMT_INCOME_TOTAL": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT": {
+            "type": "numerical"
+        },
+        "AMT_ANNUITY": {
+            "type": "numerical"
+        },
+        "AMT_GOODS_PRICE": {
+            "type": "numerical"
+        },
+        "NAME_TYPE_SUITE": {
+            "type": "categorical"
+        },
+        "NAME_INCOME_TYPE": {
+            "type": "categorical"
+        },
+        "NAME_EDUCATION_TYPE": {
+            "type": "categorical"
+        },
+        "NAME_FAMILY_STATUS": {
+            "type": "categorical"
+        },
+        "NAME_HOUSING_TYPE": {
+            "type": "categorical"
+        },
+        "REGION_POPULATION_RELATIVE": {
+            "type": "numerical"
+        },
+        "DAYS_BIRTH": {
+            "type": "numerical"
+        },
+        "DAYS_EMPLOYED": {
+            "type": "numerical"
+        },
+        "DAYS_REGISTRATION": {
+            "type": "numerical"
+        },
+        "DAYS_ID_PUBLISH": {
+            "type": "numerical"
+        },
+        "OWN_CAR_AGE": {
+            "type": "numerical"
+        },
+        "FLAG_MOBIL": {
+            "type": "categorical"
+        },
+        "FLAG_EMP_PHONE": {
+            "type": "categorical"
+        },
+        "FLAG_WORK_PHONE": {
+            "type": "categorical"
+        },
+        "FLAG_CONT_MOBILE": {
+            "type": "categorical"
+        },
+        "FLAG_PHONE": {
+            "type": "categorical"
+        },
+        "FLAG_EMAIL": {
+            "type": "categorical"
+        },
+        "OCCUPATION_TYPE": {
+            "type": "categorical"
+        },
+        "CNT_FAM_MEMBERS": {
+            "type": "numerical"
+        },
+        "REGION_RATING_CLIENT": {
+            "type": "categorical"
+        },
+        "REGION_RATING_CLIENT_W_CITY": {
+            "type": "categorical"
+        },
+        "WEEKDAY_APPR_PROCESS_START": {
+            "type": "categorical"
+        },
+        "HOUR_APPR_PROCESS_START": {
+            "type": "categorical"
+        },
+        "REG_REGION_NOT_LIVE_REGION": {
+            "type": "categorical"
+        },
+        "REG_REGION_NOT_WORK_REGION": {
+            "type": "categorical"
+        },
+        "LIVE_REGION_NOT_WORK_REGION": {
+            "type": "categorical"
+        },
+        "REG_CITY_NOT_LIVE_CITY": {
+            "type": "categorical"
+        },
+        "REG_CITY_NOT_WORK_CITY": {
+            "type": "categorical"
+        },
+        "LIVE_CITY_NOT_WORK_CITY": {
+            "type": "categorical"
+        },
+        "ORGANIZATION_TYPE": {
+            "type": "categorical"
+        },
+        "EXT_SOURCE_1": {
+            "type": "numerical"
+        },
+        "EXT_SOURCE_2": {
+            "type": "numerical"
+        },
+        "EXT_SOURCE_3": {
+            "type": "numerical"
+        },
+        "APARTMENTS_AVG": {
+            "type": "numerical"
+        },
+        "BASEMENTAREA_AVG": {
+            "type": "numerical"
+        },
+        "YEARS_BEGINEXPLUATATION_AVG": {
+            "type": "numerical"
+        },
+        "YEARS_BUILD_AVG": {
+            "type": "numerical"
+        },
+        "COMMONAREA_AVG": {
+            "type": "numerical"
+        },
+        "ELEVATORS_AVG": {
+            "type": "numerical"
+        },
+        "ENTRANCES_AVG": {
+            "type": "numerical"
+        },
+        "FLOORSMAX_AVG": {
+            "type": "numerical"
+        },
+        "FLOORSMIN_AVG": {
+            "type": "numerical"
+        },
+        "LANDAREA_AVG": {
+            "type": "numerical"
+        },
+        "LIVINGAPARTMENTS_AVG": {
+            "type": "numerical"
+        },
+        "LIVINGAREA_AVG": {
+            "type": "numerical"
+        },
+        "NONLIVINGAPARTMENTS_AVG": {
+            "type": "numerical"
+        },
+        "NONLIVINGAREA_AVG": {
+            "type": "numerical"
+        },
+        "APARTMENTS_MODE": {
+            "type": "numerical"
+        },
+        "BASEMENTAREA_MODE": {
+            "type": "numerical"
+        },
+        "YEARS_BEGINEXPLUATATION_MODE": {
+            "type": "numerical"
+        },
+        "YEARS_BUILD_MODE": {
+            "type": "numerical"
+        },
+        "COMMONAREA_MODE": {
+            "type": "numerical"
+        },
+        "ELEVATORS_MODE": {
+            "type": "numerical"
+        },
+        "ENTRANCES_MODE": {
+            "type": "numerical"
+        },
+        "FLOORSMAX_MODE": {
+            "type": "numerical"
+        },
+        "FLOORSMIN_MODE": {
+            "type": "numerical"
+        },
+        "LANDAREA_MODE": {
+            "type": "numerical"
+        },
+        "LIVINGAPARTMENTS_MODE": {
+            "type": "numerical"
+        },
+        "LIVINGAREA_MODE": {
+            "type": "numerical"
+        },
+        "NONLIVINGAPARTMENTS_MODE": {
+            "type": "numerical"
+        },
+        "NONLIVINGAREA_MODE": {
+            "type": "numerical"
+        },
+        "APARTMENTS_MEDI": {
+            "type": "numerical"
+        },
+        "BASEMENTAREA_MEDI": {
+            "type": "numerical"
+        },
+        "YEARS_BEGINEXPLUATATION_MEDI": {
+            "type": "numerical"
+        },
+        "YEARS_BUILD_MEDI": {
+            "type": "numerical"
+        },
+        "COMMONAREA_MEDI": {
+            "type": "numerical"
+        },
+        "ELEVATORS_MEDI": {
+            "type": "numerical"
+        },
+        "ENTRANCES_MEDI": {
+            "type": "numerical"
+        },
+        "FLOORSMAX_MEDI": {
+            "type": "numerical"
+        },
+        "FLOORSMIN_MEDI": {
+            "type": "numerical"
+        },
+        "LANDAREA_MEDI": {
+            "type": "numerical"
+        },
+        "LIVINGAPARTMENTS_MEDI": {
+            "type": "numerical"
+        },
+        "LIVINGAREA_MEDI": {
+            "type": "numerical"
+        },
+        "NONLIVINGAPARTMENTS_MEDI": {
+            "type": "numerical"
+        },
+        "NONLIVINGAREA_MEDI": {
+            "type": "numerical"
+        },
+        "FONDKAPREMONT_MODE": {
+            "type": "categorical"
+        },
+        "HOUSETYPE_MODE": {
+            "type": "categorical"
+        },
+        "TOTALAREA_MODE": {
+            "type": "numerical"
+        },
+        "WALLSMATERIAL_MODE": {
+            "type": "categorical"
+        },
+        "EMERGENCYSTATE_MODE": {
+            "type": "categorical"
+        },
+        "OBS_30_CNT_SOCIAL_CIRCLE": {
+            "type": "numerical"
+        },
+        "DEF_30_CNT_SOCIAL_CIRCLE": {
+            "type": "numerical"
+        },
+        "OBS_60_CNT_SOCIAL_CIRCLE": {
+            "type": "numerical"
+        },
+        "DEF_60_CNT_SOCIAL_CIRCLE": {
+            "type": "numerical"
+        },
+        "DAYS_LAST_PHONE_CHANGE": {
+            "type": "numerical"
+        },
+        "FLAG_DOCUMENT_2": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_3": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_4": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_5": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_6": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_7": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_8": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_9": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_10": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_11": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_12": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_13": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_14": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_15": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_16": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_17": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_18": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_19": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_20": {
+            "type": "categorical"
+        },
+        "FLAG_DOCUMENT_21": {
+            "type": "categorical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_HOUR": {
+            "type": "numerical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_DAY": {
+            "type": "numerical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_WEEK": {
+            "type": "numerical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_MON": {
+            "type": "numerical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_QRT": {
+            "type": "numerical"
+        },
+        "AMT_REQ_CREDIT_BUREAU_YEAR": {
+            "type": "numerical"
+        }
+    },
+    "bureau": {
+        "SK_BUREAU_ID": {
+            "type": "categorical"
+        },
+        "CREDIT_ACTIVE": {
+            "type": "categorical"
+        },
+        "CREDIT_CURRENCY": {
+            "type": "categorical"
+        },
+        "DAYS_CREDIT": {
+            "type": "numerical"
+        },
+        "CREDIT_DAY_OVERDUE": {
+            "type": "numerical"
+        },
+        "DAYS_CREDIT_ENDDATE": {
+            "type": "numerical"
+        },
+        "DAYS_ENDDATE_FACT": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_MAX_OVERDUE": {
+            "type": "numerical"
+        },
+        "CNT_CREDIT_PROLONG": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_SUM": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_SUM_DEBT": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_SUM_LIMIT": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_SUM_OVERDUE": {
+            "type": "numerical"
+        },
+        "CREDIT_TYPE": {
+            "type": "categorical"
+        },
+        "DAYS_CREDIT_UPDATE": {
+            "type": "numerical"
+        }
+    },
+    "bureau_balance": {
+        "MONTHS_BALANCE": {
+            "type": "numerical"
+        },
+        "STATUS": {
+            "type": "categorical"
+        }
+    },
+    "previous_application": {
+        "SK_ID_PREV": {
+            "type": "categorical"
+        },
+        "NAME_CONTRACT_TYPE": {
+            "type": "categorical"
+        },
+        "AMT_ANNUITY": {
+            "type": "numerical"
+        },
+        "AMT_APPLICATION": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT": {
+            "type": "numerical"
+        },
+        "AMT_DOWN_PAYMENT": {
+            "type": "numerical"
+        },
+        "AMT_GOODS_PRICE": {
+            "type": "numerical"
+        },
+        "WEEKDAY_APPR_PROCESS_START": {
+            "type": "categorical"
+        },
+        "HOUR_APPR_PROCESS_START": {
+            "type": "categorical"
+        },
+        "FLAG_LAST_APPL_PER_CONTRACT": {
+            "type": "categorical"
+        },
+        "NFLAG_LAST_APPL_IN_DAY": {
+            "type": "categorical"
+        },
+        "RATE_DOWN_PAYMENT": {
+            "type": "numerical"
+        },
+        "RATE_INTEREST_PRIMARY": {
+            "type": "numerical"
+        },
+        "RATE_INTEREST_PRIVILEGED": {
+            "type": "numerical"
+        },
+        "NAME_CASH_LOAN_PURPOSE": {
+            "type": "categorical"
+        },
+        "NAME_CONTRACT_STATUS": {
+            "type": "categorical"
+        },
+        "DAYS_DECISION": {
+            "type": "numerical"
+        },
+        "NAME_PAYMENT_TYPE": {
+            "type": "categorical"
+        },
+        "CODE_REJECT_REASON": {
+            "type": "categorical"
+        },
+        "NAME_TYPE_SUITE": {
+            "type": "categorical"
+        },
+        "NAME_CLIENT_TYPE": {
+            "type": "categorical"
+        },
+        "NAME_GOODS_CATEGORY": {
+            "type": "categorical"
+        },
+        "NAME_PORTFOLIO": {
+            "type": "categorical"
+        },
+        "NAME_PRODUCT_TYPE": {
+            "type": "categorical"
+        },
+        "CHANNEL_TYPE": {
+            "type": "categorical"
+        },
+        "SELLERPLACE_AREA": {
+            "type": "numerical"
+        },
+        "NAME_SELLER_INDUSTRY": {
+            "type": "categorical"
+        },
+        "CNT_PAYMENT": {
+            "type": "numerical"
+        },
+        "NAME_YIELD_GROUP": {
+            "type": "categorical"
+        },
+        "PRODUCT_COMBINATION": {
+            "type": "categorical"
+        },
+        "DAYS_FIRST_DRAWING": {
+            "type": "numerical"
+        },
+        "DAYS_FIRST_DUE": {
+            "type": "numerical"
+        },
+        "DAYS_LAST_DUE_1ST_VERSION": {
+            "type": "numerical"
+        },
+        "DAYS_LAST_DUE": {
+            "type": "numerical"
+        },
+        "DAYS_TERMINATION": {
+            "type": "numerical"
+        },
+        "NFLAG_INSURED_ON_APPROVAL": {
+            "type": "categorical"
+        }
+    },
+    "POS_CASH_balance": {
+        "SK_ID_PREV": {
+            "type": "categorical"
+        },
+        "MONTHS_BALANCE": {
+            "type": "numerical"
+        },
+        "CNT_INSTALMENT": {
+            "type": "numerical"
+        },
+        "CNT_INSTALMENT_FUTURE": {
+            "type": "numerical"
+        },
+        "NAME_CONTRACT_STATUS": {
+            "type": "categorical"
+        },
+        "SK_DPD": {
+            "type": "numerical"
+        },
+        "SK_DPD_DEF": {
+            "type": "numerical"
+        }
+    },
+    "installments_payments": {
+        "SK_ID_PREV": {
+            "type": "categorical"
+        },
+        "NUM_INSTALMENT_VERSION": {
+            "type": "numerical"
+        },
+        "NUM_INSTALMENT_NUMBER": {
+            "type": "numerical"
+        },
+        "DAYS_INSTALMENT": {
+            "type": "numerical"
+        },
+        "DAYS_ENTRY_PAYMENT": {
+            "type": "numerical"
+        },
+        "AMT_INSTALMENT": {
+            "type": "numerical"
+        },
+        "AMT_PAYMENT": {
+            "type": "numerical"
+        }
+    },
+    "credit_card_balance": {
+        "SK_ID_PREV": {
+            "type": "categorical"
+        },
+        "MONTHS_BALANCE": {
+            "type": "numerical"
+        },
+        "AMT_BALANCE": {
+            "type": "numerical"
+        },
+        "AMT_CREDIT_LIMIT_ACTUAL": {
+            "type": "numerical"
+        },
+        "AMT_DRAWINGS_ATM_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_DRAWINGS_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_DRAWINGS_OTHER_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_DRAWINGS_POS_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_INST_MIN_REGULARITY": {
+            "type": "numerical"
+        },
+        "AMT_PAYMENT_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_PAYMENT_TOTAL_CURRENT": {
+            "type": "numerical"
+        },
+        "AMT_RECEIVABLE_PRINCIPAL": {
+            "type": "numerical"
+        },
+        "AMT_RECIVABLE": {
+            "type": "numerical"
+        },
+        "AMT_TOTAL_RECEIVABLE": {
+            "type": "numerical"
+        },
+        "CNT_DRAWINGS_ATM_CURRENT": {
+            "type": "numerical"
+        },
+        "CNT_DRAWINGS_CURRENT": {
+            "type": "numerical"
+        },
+        "CNT_DRAWINGS_OTHER_CURRENT": {
+            "type": "numerical"
+        },
+        "CNT_DRAWINGS_POS_CURRENT": {
+            "type": "numerical"
+        },
+        "CNT_INSTALMENT_MATURE_CUM": {
+            "type": "numerical"
+        },
+        "NAME_CONTRACT_STATUS": {
+            "type": "categorical"
+        },
+        "SK_DPD": {
+            "type": "numerical"
+        },
+        "SK_DPD_DEF": {
+            "type": "numerical"
+        }
+    }
+}
