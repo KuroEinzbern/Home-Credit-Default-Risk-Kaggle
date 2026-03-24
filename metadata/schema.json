@@ -423,6 +423,9 @@
         }
     },
     "previous_application": {
+        "SK_ID_CURR": {
+            "type": "categorical"
+        },
         "SK_ID_PREV": {
             "type": "categorical"
         },
