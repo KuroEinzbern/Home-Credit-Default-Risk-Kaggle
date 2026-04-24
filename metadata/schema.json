@@ -380,6 +380,9 @@
         "DAYS_CREDIT": {
             "type": "numerical"
         },
+        "AMT_ANNUITY": {
+            "type": "numerical"
+        },
         "CREDIT_DAY_OVERDUE": {
             "type": "numerical"
         },

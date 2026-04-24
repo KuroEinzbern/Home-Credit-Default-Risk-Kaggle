@@ -2,12 +2,22 @@ import pandas as pd
 from scipy.stats import trim_mean       
 from IPython.display import display
 import numpy as np
+import default_risk.config as cfg
 import json
+
+
+def create_files_nulls_per_colmun(data_frame,table_name):
+    nulls=data_frame.isna().sum()
+    nulls.head()
+    nulls.to_csv(cfg.DUMP_FROM_NOTEBOOKS / ("null_count_" + table_name),index=True)
+    porcentaje_of_nulls = (nulls * 100) / len(data_frame)
+    porcentaje_of_nulls.head()
+    porcentaje_of_nulls.to_csv(cfg.DUMP_FROM_NOTEBOOKS / ("null_porcentaje_" + table_name),index=False)
 
 
 def eda_per_table_persisting_result_html(df: pd.DataFrame, schema,table_name, target_aware: bool):
     results= eda_per_table(df,schema,table_name,target_aware)
-    with open("eda_report.html", "w", encoding="utf-8") as f:
+    with open(cfg.DUMP_FROM_NOTEBOOKS / (table_name + "_eda_report.html"), "w", encoding="utf-8") as f:
             f.write("<html><body>")
             for key,value in results.items() :
                   f.write(f"<h2>{key}</h2>")
@@ -140,6 +150,7 @@ def get_distribution_metrics(df: pd.DataFrame, column_name) -> dict:
     column=df[column_name]
 
     median= column.median()
+    max_value=column.max()
     percentil_99=column.quantile(0.99)
     percentil_90=column.quantile(0.90)
 
@@ -151,6 +162,8 @@ def get_distribution_metrics(df: pd.DataFrame, column_name) -> dict:
         distribution_dict["ratio_p99_p50"]= percentil_99 / median
     if(percentil_90 !=0):
         distribution_dict["ratio_p99_p90"]= percentil_99 / percentil_90
+    if(percentil_99 != 0):
+        distribution_dict["ratio_max_value_p99"]= max_value / percentil_99
 
     return distribution_dict
     
