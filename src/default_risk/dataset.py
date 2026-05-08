@@ -158,9 +158,8 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     # sk_dpd_def_severe
     df_clean['sk_dpd_def_severe'] = (df['SK_DPD_DEF'] > 1).astype(int)
     
-    # 2. Saving data
-    processed_data_path = output_filepath / '1.0-credit_card_balance.csv'
-    df_clean.to_csv(processed_data_path, index=False)
+    processed_data_path = output_filepath / '1.0-credit_card_balance.parquet'
+    df_clean.to_parquet(processed_data_path, index=False)
     print(f'Cleaning finished! File saved to: {processed_data_path}')
 
 
