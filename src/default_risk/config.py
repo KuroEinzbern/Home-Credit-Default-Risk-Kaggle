@@ -9,6 +9,14 @@ DATA_DIR = PROJECT_ROOT / "data"
 NOTEBOOKS= PROJECT_ROOT / "notebooks"
 METADATA_DIR = PROJECT_ROOT / "metadata"
 
+
+RAW_DATA_DIR = DATA_DIR / "raw"
+INTERIM_DATA_DIR = DATA_DIR / "interim"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+
+SPLITS_DIR = INTERIM_DATA_DIR / "01_Splits"
+CLEANS_DIR = INTERIM_DATA_DIR / "02_Cleans"
+
 # Rutas específicas a archivos
 DUMP_FROM_NOTEBOOKS= NOTEBOOKS / "dumps_from_notebooks"
 APPLICATION_TRAIN = DATA_DIR / "application_train.csv"
