@@ -21,6 +21,8 @@ def clip_p99_x4_and_fill(series, fill_nulls=False):
 def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     print('Starting credit_card_balance table cleaning...')
     print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -84,7 +86,7 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     # inconsistency_gap
     gap_condition = (df['AMT_INST_MIN_REGULARITY'] > df['AMT_TOTAL_RECEIVABLE']) & (df['AMT_TOTAL_RECEIVABLE'] > 0)
     gap_values = df['AMT_INST_MIN_REGULARITY'] - df['AMT_TOTAL_RECEIVABLE']
-    df_clean['inconsistency_gap'] = np.where(gap_condition, np.log1p(gap_values), 0)
+    df_clean['inconsistency_gap'] = np.where(gap_condition, np.log1p(gap_values.clip(lower=0)), 0)
 
     # diff_payment_current_total
     df_clean['diff_payment_current_total'] = np.log1p(df['AMT_PAYMENT_CURRENT'] - df['AMT_PAYMENT_TOTAL_CURRENT']+1)
@@ -160,8 +162,9 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
 
 def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print('Starting installments_payments table cleaning...')
-
     print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
     df = pd.read_parquet(input_filepath)
     
     df_clean = pd.DataFrame()

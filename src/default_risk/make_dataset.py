@@ -12,7 +12,7 @@ def generate_cleaner_paths(table_name: str, split: str):
 def main():
 
 
-    splits = [ "train", "test" ]
+    splits = [ "train" ]
     SPLITS_DIR.mkdir(parents=True, exist_ok=True)
     CLEANS_DIR.mkdir(parents=True, exist_ok=True)
 
