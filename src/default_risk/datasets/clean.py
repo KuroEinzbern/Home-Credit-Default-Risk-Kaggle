@@ -21,6 +21,8 @@ def clip_p99_x4_and_fill(series, fill_nulls=False):
 def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     print('Starting credit_card_balance table cleaning...')
     print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -84,7 +86,7 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     # inconsistency_gap
     gap_condition = (df['AMT_INST_MIN_REGULARITY'] > df['AMT_TOTAL_RECEIVABLE']) & (df['AMT_TOTAL_RECEIVABLE'] > 0)
     gap_values = df['AMT_INST_MIN_REGULARITY'] - df['AMT_TOTAL_RECEIVABLE']
-    df_clean['inconsistency_gap'] = np.where(gap_condition, np.log1p(gap_values), 0)
+    df_clean['inconsistency_gap'] = np.where(gap_condition, np.log1p(gap_values.clip(lower=0)), 0)
 
     # diff_payment_current_total
     df_clean['diff_payment_current_total'] = np.log1p(df['AMT_PAYMENT_CURRENT'] - df['AMT_PAYMENT_TOTAL_CURRENT']+1)
@@ -160,8 +162,9 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
 
 def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print('Starting installments_payments table cleaning...')
-
     print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
     df = pd.read_parquet(input_filepath)
     
     df_clean = pd.DataFrame()
@@ -198,6 +201,105 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
 
     # amt_payment
     df_clean['amt_payment'] = log1p_and_clip_p999(df['AMT_PAYMENT'])
+
+    df_clean.to_parquet(output_filepath, index=False)
+    print(f'Cleaning finished! File saved to: {output_filepath}')
+
+
+def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
+    print('Starting POS_CASH_balance table cleaning...')
+    print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
+    df = pd.read_parquet(input_filepath)
+    
+    df = df.sort_values(by=['SK_ID_PREV', 'MONTHS_BALANCE'], ascending=[True, True])
+    df_clean = pd.DataFrame()
+    
+    # id_prev
+    df_clean['id_prev'] = df['SK_ID_PREV']
+
+    # id_curr
+    df_clean['id_curr'] = df['SK_ID_CURR']
+
+    # months_balance
+    df_clean['months_balance'] = df['MONTHS_BALANCE']
+
+    # count_instalment
+    df_clean['count_instalment'] = df['CNT_INSTALMENT']
+
+    # count_instalment_is_null
+    df_clean['count_instalment_is_null'] = df['CNT_INSTALMENT'].isnull().astype(int)
+
+    # count_instalment_future
+    df_clean['count_instalment_future'] = df['CNT_INSTALMENT_FUTURE']
+
+    # name_contract_status
+    status_mode = df[df['NAME_CONTRACT_STATUS'] != 'XNA']['NAME_CONTRACT_STATUS'].mode()[0]
+    df_clean['name_contract_status'] = np.where(
+        df['NAME_CONTRACT_STATUS'] == 'XNA', 
+        status_mode, 
+        df['NAME_CONTRACT_STATUS']
+    )
+
+    start_of_loan_as_active = (df_clean['name_contract_status'] == 'Active') & \
+                   (df['CNT_INSTALMENT'].isnull() | df['CNT_INSTALMENT_FUTURE'].isnull())
+
+    pattern_occurrences = start_of_loan_as_active.groupby(df['SK_ID_PREV']).transform('sum')
+    
+    first_row_of_series = df.groupby('SK_ID_PREV').cumcount() == 0 
+    start_of_loan_as_active_mask = start_of_loan_as_active & (pattern_occurrences == 1) & first_row_of_series
+    
+    df_clean['name_contract_status'] = np.where(
+        start_of_loan_as_active_mask, 
+        'Signed', 
+        df_clean['name_contract_status']
+    )
+
+    # sk_dpd
+    df_clean['sk_dpd'] = np.log1p(df['SK_DPD'])
+
+    # sk_dpd_tecnical
+    df_clean['sk_dpd_tecnical'] = (df['SK_DPD'] == 1).astype(int)
+
+    # sk_dpd_severe
+    df_clean['sk_dpd_severe'] = (df['SK_DPD'] > 1).astype(int)
+
+    # sk_dpd_def
+    df_clean['sk_dpd_def'] = np.log1p(df['SK_DPD_DEF'])
+
+    # dpd_def_tecnical
+    df_clean['dpd_def_tecnical'] = (df['SK_DPD_DEF'] == 1).astype(int)
+
+    # dpd_def_severe
+    df_clean['dpd_def_severe'] = (df['SK_DPD_DEF'] > 1).astype(int)
+
+    # amount_advanced_payment
+    df_clean['amount_advanced_payment'] = (df.groupby('SK_ID_PREV')['CNT_INSTALMENT_FUTURE'].shift(1) - df['CNT_INSTALMENT_FUTURE'])
+    df_clean['amount_advanced_payment'] = np.where(df_clean['amount_advanced_payment'] > 1, df_clean['amount_advanced_payment'], 0)
+
+    is_completed = df_clean['name_contract_status'] == 'Completed'
+    completed_cumsum = is_completed.groupby(df['SK_ID_PREV']).cumsum()
+
+    # flag_is_dead_tail
+    df_clean['flag_is_dead_tail'] = (is_completed & (completed_cumsum > 1)).astype(int)
+
+    # flag_delay_tail
+    is_before_first_completed = (completed_cumsum == 0)
+    
+    potential_delay_tail = (
+        (df_clean['name_contract_status'] == 'Active') & 
+        (df['CNT_INSTALMENT_FUTURE'] == 0) & 
+        is_before_first_completed
+    )
+    
+    dpd_in_tail = df['SK_DPD'].where(potential_delay_tail)
+    dpd_def_in_tail = df['SK_DPD_DEF'].where(potential_delay_tail)
+
+    dpd_is_constant = dpd_in_tail.groupby(df['SK_ID_PREV']).transform('max') == dpd_in_tail.groupby(df['SK_ID_PREV']).transform('min')
+    dpd_def_is_constant = dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('max') == dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('min')
+
+    df_clean['flag_delay_tail'] = (potential_delay_tail & dpd_is_constant & dpd_def_is_constant).astype(int)
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
