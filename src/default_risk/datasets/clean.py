@@ -19,6 +19,7 @@ def clip_p99_x4_and_fill(series, fill_nulls=False):
     return s
 
 def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
+
     print('Starting credit_card_balance table cleaning...')
     print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
@@ -156,6 +157,26 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     
     # sk_dpd_def_severe
     df_clean['sk_dpd_def_severe'] = (df['SK_DPD_DEF'] > 1).astype(int)
+
+
+    have_at_least_one_status_closed= df["NAME_CONTRACT_STATUS"].eq("Completed").groupby(df["SK_ID_PREV"]).transform("any")
+    have_recent_balance= df["MONTHS_BALANCE"].gt(-4).groupby(df["SK_ID_PREV"]).transform("any")
+
+    is_closed = df["NAME_CONTRACT_STATUS"] == "Completed"
+
+    df_clean["closing_month"] = (df["MONTHS_BALANCE"].where(is_closed).groupby(df["SK_ID_PREV"]).transform("min"))
+    df_clean["non_closed_loan"] = (~have_at_least_one_status_closed)
+    df_clean["potential_on_going_loan"] = (~have_at_least_one_status_closed) & (have_recent_balance)
+    df_clean["incomplete_sequence"] =  (~have_at_least_one_status_closed) & (~have_recent_balance)
+
+
+
+
+
+
+
+
+
     
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
@@ -303,3 +324,35 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
+
+
+
+def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
+
+    np.seterr(all='raise')
+    df = pd.read_parquet(input_filepath)
+    df_clean = pd.DataFrame()
+
+    df.sort_values(['SK_ID_BUREAU', 'MONTHS_BALANCE'],inplace=True)
+    df_clean["id_bureau"]= df["SK_ID_BUREAU"]
+    df_clean["months_balance"]= df["MONTHS_BALANCE"]
+    df_clean["status"]= df["STATUS"]
+
+
+    have_at_least_one_status_closed= df["STATUS"].eq("C").groupby(df["SK_ID_BUREAU"]).transform("any")
+    have_recent_balance= df["MONTHS_BALANCE"].gt(-4).groupby(df["SK_ID_BUREAU"]).transform("any")
+
+    is_closed = df["STATUS"] == "C"
+
+    df_clean["closing_month"] = (df["MONTHS_BALANCE"].where(is_closed).groupby(df["SK_ID_BUREAU"]).transform("min"))
+    df_clean["non_closed_loan"] = (~have_at_least_one_status_closed)
+    df_clean["potential_on_going_loan"] = (~have_at_least_one_status_closed) & (have_recent_balance)
+    df_clean["incomplete_sequence"] =  (~have_at_least_one_status_closed) & (~have_recent_balance)
+
+    df_clean.to_parquet(output_filepath, index=False)
+    print(f'Cleaning finished! File saved to: {output_filepath}')
+        
+    return df_clean
+
+
+
