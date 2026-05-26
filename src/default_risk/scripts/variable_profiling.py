@@ -176,7 +176,7 @@ def basic_eda_per_column_categorical(df: pd.DataFrame,column_name, target_aware:
     basic_data_dict["mode"]=column.mode().to_list()
     dict_to_return={}
     dict_to_return["basic_data"]=pd.DataFrame([basic_data_dict])
-    if(30 > cardinality and target_aware):
+    if(70 > cardinality and target_aware):
         default_rate_per_category=(df.groupby(column_name,dropna=False)["TARGET"].mean() *100).reset_index(name="TARGET_RATE") 
         dict_to_return["default_rate"]=default_rate_per_category
     dict_to_return["frequency"]=get_counts_per_class(column)

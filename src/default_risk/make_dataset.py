@@ -1,34 +1,46 @@
 from pathlib import Path
 from types import SimpleNamespace
-from default_risk.config import CLEANS_DIR, RAW_DATA_DIR, SPLITS_DIR
-from default_risk.datasets.clean import clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance
-from default_risk.datasets.extract import split_dataset
+from default_risk.config import CLEANS_DIR, RAW_DATA_DIR, SPLITS_DIR, CANONIC_DIR
+from default_risk.datasets.clean import clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
+from default_risk.datasets.extract import split_dataset, canonizate
+from collections.abc import Callable
+
+canonizated_tables: dict ={}
 
 def generate_cleaner_paths(table_name: str, split: str):
     p_in = SPLITS_DIR / f'{table_name}.{split}.parquet'
     p_out = CLEANS_DIR / f'{table_name}.{split}-cleaned.parquet'
     return p_in, p_out
 
+
+cleaning_dict: dict[str, Callable] = {
+        "application_train" : clean_application_train,
+        "previous_application" : clean_previous_application,
+        "credit_card_balance" : clean_credit_card_balance,
+        "installments_payments" : clean_installments_payments,
+        "POS_CASH_balance" : clean_pos_cash_balance,
+        "bureau_balance" : clean_bureau_balance,
+}
+
+tables_list: list= list(cleaning_dict.keys())
+
+
 def main():
 
-
-    splits = [ "train" ]
     SPLITS_DIR.mkdir(parents=True, exist_ok=True)
     CLEANS_DIR.mkdir(parents=True, exist_ok=True)
 
-    split_dataset(RAW_DATA_DIR, SPLITS_DIR)
+    
+    canonizate()
 
-    for split in splits:
-        credit_card_in, credit_card_out = generate_cleaner_paths('credit_card_balance', split)
-        clean_credit_card_balance( credit_card_in , credit_card_out )
+    split_dataset(RAW_DATA_DIR,CANONIC_DIR, SPLITS_DIR)
 
-        installment_payments_in, installment_payments_out = generate_cleaner_paths('installments_payments', split)
-        clean_installments_payments(installment_payments_in, installment_payments_out)
-
-        pos_cash_in, pos_cash_out = generate_cleaner_paths('POS_CASH_balance', split)
-        clean_pos_cash_balance(pos_cash_in, pos_cash_out)
+    for table_name in tables_list :
+        path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name,"train")
+        cleaner= cleaning_dict[table_name]
+        cleaner(path_bronze_layer_file,path_silver_layer_file)
 
 
-
+        
 if __name__ == "__main__":
     main()
