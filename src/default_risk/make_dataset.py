@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 from default_risk.config import CLEANS_DIR, RAW_DATA_DIR, SPLITS_DIR, CANONIC_DIR
-from default_risk.datasets.clean import clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
+from default_risk.datasets.clean import clean_bureau, clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
 from default_risk.datasets.extract import split_dataset, canonizate
 from collections.abc import Callable
 
@@ -20,6 +20,7 @@ cleaning_dict: dict[str, Callable] = {
         "installments_payments" : clean_installments_payments,
         "POS_CASH_balance" : clean_pos_cash_balance,
         "bureau_balance" : clean_bureau_balance,
+        "bureau": clean_bureau
 }
 
 tables_list: list= list(cleaning_dict.keys())
