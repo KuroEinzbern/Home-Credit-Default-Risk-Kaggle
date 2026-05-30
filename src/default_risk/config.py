@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "data/"
 NOTEBOOKS= PROJECT_ROOT / "notebooks"
 METADATA_DIR = PROJECT_ROOT / "metadata"
-
+ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
 RAW_DATA_DIR = DATA_DIR / "raw"
 INTERIM_DATA_DIR = DATA_DIR / "interim"
@@ -18,8 +18,10 @@ CANONIC_DIR = INTERIM_DATA_DIR / "00_Canonicals"
 SPLITS_DIR = INTERIM_DATA_DIR / "01_Splits"
 CLEANS_DIR = INTERIM_DATA_DIR / "02_Cleans"
 
-# Rutas específicas a archivos
+
 DUMP_FROM_NOTEBOOKS= NOTEBOOKS / "dumps_from_notebooks"
+
+# Rutas específicas a archivos
 APPLICATION_TRAIN = RAW_DATA_DIR / "application_train.csv"
 APPLICATION_TEST = RAW_DATA_DIR / "application_test.csv"
 BUREAU = RAW_DATA_DIR / "bureau.csv"
@@ -30,5 +32,12 @@ POS_CASH_BALANCE = RAW_DATA_DIR / "POS_CASH_balance.csv"
 PREVIOUS_APPLICATION= RAW_DATA_DIR / "previous_application.csv"
 SCHEMA_JSON = METADATA_DIR / "schema.json"
 
-# Crear carpetas si no existen (útil para notebooks nuevos)
+# Crear carpetas si no existen
 DATA_DIR.mkdir(exist_ok=True)
+DUMP_FROM_NOTEBOOKS.mkdir(exist_ok=True)
+CANONIC_DIR.mkdir(exist_ok=True,parents=True)
+SPLITS_DIR.mkdir(exist_ok=True,parents=True)
+CLEANS_DIR.mkdir(exist_ok=True,parents=True)
+INTERIM_DATA_DIR.mkdir(exist_ok=True,parents=True)
+ARTIFACTS_DIR.mkdir(exist_ok=True,parents=True)
+
