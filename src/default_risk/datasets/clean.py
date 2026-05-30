@@ -639,3 +639,133 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     print(f'Cleaning finished! File saved to: {output_filepath}')
         
     return df_clean
+
+
+def clean_bureau(input_filepath: Path, output_filepath: Path):
+    print('Starting bureau table cleaning...')
+    print(f'Loading data from: {input_filepath}')
+    np.seterr(all='raise')
+
+    df = pd.read_parquet(input_filepath)
+    df_clean = pd.DataFrame()
+    
+    # sk_id_curr
+    df_clean['sk_id_curr'] = df['SK_ID_CURR']
+
+    # sk_bureau_id
+    df_clean['sk_bureau_id'] = df['SK_BUREAU_ID']
+
+    # credit_active
+    credit_active_status = df['CREDIT_ACTIVE'].replace({'Bad debt': 'Sold'})
+    mask_closed = df['DAYS_ENDDATE_FACT'].notnull() & (credit_active_status != 'Active')
+    df_clean['credit_active'] = np.where(mask_closed, 'Closed', credit_active_status)
+
+    # credit_currency
+    counts = df['CREDIT_CURRENCY'].value_counts()
+    currencies_to_keep = counts[counts >= 200].index
+    df_clean['credit_currency'] = np.where(df['CREDIT_CURRENCY'].isin(currencies_to_keep), df['CREDIT_CURRENCY'], 'other')
+
+    # days_credit
+    df_clean['days_credit'] = df['DAYS_CREDIT']
+
+    # flag_have_credit_day_overdue
+    df_clean['flag_have_credit_day_overdue'] = (df['CREDIT_DAY_OVERDUE'] > 0).astype(int)
+
+    # days_credit_enddate
+    df_clean['days_credit_enddate'] = df['DAYS_CREDIT_ENDDATE']
+    mask_drop = (df_clean['credit_active'] == 'Closed') & df['DAYS_ENDDATE_FACT'].notnull()
+    df_clean = df_clean[~mask_drop]
+    mask_nan_range = (df_clean['DAYS_CREDIT_ENDDATE'] >= 12000) & (df_clean['DAYS_CREDIT_ENDDATE'] <= 31500)
+    df_clean.loc[mask_nan_range, 'DAYS_CREDIT_ENDDATE'] = np.nan
+
+    # days_credit_enddate_first_cluster_values
+    mask_cluster_1 = (df['DAYS_CREDIT_ENDDATE'] >= 1600) & (df['DAYS_CREDIT_ENDDATE'] < 12000)
+    min_x_interval = df.loc[mask_cluster_1, 'DAYS_CREDIT_ENDDATE'].min()
+    df_clean['days_credit_enddate_first_cluster_values'] = np.where(
+        mask_cluster_1, 
+        df['DAYS_CREDIT_ENDDATE'] - min_x_interval, 
+        df['DAYS_CREDIT_ENDDATE']
+    )
+
+    # days_credit_enddate_is_present
+    df_clean['days_credit_enddate_is_present'] = df['DAYS_CREDIT_ENDDATE'].notnull().astype(int)
+
+    # days_credit_enddate_closed
+    df_clean['days_credit_enddate_closed'] = (df['DAYS_CREDIT_ENDDATE'] < 0).astype(int)
+
+    # days_credit_enddate_firstpositive_cluster
+    df_clean['days_credit_enddate_first_positive_cluster'] = (df['DAYS_CREDIT_ENDDATE'] > 1600) & (df['DAYS_CREDIT_ENDDATE'] < 12000)
+
+    # days_credit_enddate_second_positive_cluster
+    df_clean['days_credit_enddate_second_positive_cluster'] = (df['DAYS_CREDIT_ENDDATE'] > 12000) & (df['DAYS_CREDIT_ENDDATE'] < 18000)
+
+    # days_credit_enddate_third_positive_cluster
+    df_clean['days_credit_enddate_third_positive_cluster'] = (df['DAYS_CREDIT_ENDDATE'] > 27000) & (df['DAYS_CREDIT_ENDDATE'] < 28500)
+
+    # days_credit_enddate_fourth_positive_cluster
+    df_clean['days_credit_enddate_fourth_positive_cluster'] = ((df['DAYS_CREDIT_ENDDATE'] > 30000) & (df['DAYS_CREDIT_ENDDATE'] < 31500)).astype(int)
+
+    # days_enddate_fact
+    df_clean['days_enddate_fact'] = np.where(df['DAYS_ENDDATE_FACT'] > 3000, 3000, df['DAYS_ENDDATE_FACT'])
+
+    # days_enddate_fact_is_present
+    df_clean['days_enddate_fact_is_present'] = df['DAYS_ENDDATE_FACT'].isnull().astype(int)
+
+    # amt_credit_max_overdue
+    df_clean['amt_credit_max_overdue'] = log1p_and_clip_p999(df['AMT_CREDIT_MAX_OVERDUE'])
+
+    # amt_credit_max_overdue_is_present
+    df_clean['amt_credit_max_overdue_is_present'] = df['AMT_CREDIT_MAX_OVERDUE'].isnull().astype(int)
+
+    # cnt_credit_prolong
+    df_clean['cnt_credit_prolong'] = df['CNT_CREDIT_PROLONG']
+
+    # amt_credit_sum
+    df_clean['amt_credit_sum'] = log1p_and_clip_p999(df['AMT_CREDIT_SUM'])
+
+    # amt_credit_sum_debt
+    df_clean['amt_credit_sum_debt'] = log1p_and_clip_p999(df['AMT_CREDIT_SUM_DEBT'])
+
+    # amt_credit_sum_debt_is_present
+    df_clean['amt_credit_sum_debt_is_present'] = df['AMT_CREDIT_SUM_DEBT'].isnull().astype(int)
+
+    # amt_credit_sum_limit
+    df_clean['amt_credit_sum_limit'] = df['AMT_CREDIT_SUM_LIMIT']
+
+    # amt_credit_sum_limit_is_present
+    df_clean['amt_credit_sum_limit_is_present'] = df['AMT_CREDIT_SUM_LIMIT'].isnull().astype(int)
+
+    # amt_credit_sum_limit_is_zero
+    df_clean['amt_credit_sum_limit_is_zero'] = (df['AMT_CREDIT_SUM_LIMIT'] == 0).astype(int)
+
+    # amt_credit_sum_limit_short_limit
+    df_clean['amt_credit_sum_limit_short_limit'] = ((df['AMT_CREDIT_SUM_LIMIT'] > 0) & (df['AMT_CREDIT_SUM_LIMIT'] < 10000)).astype(int)
+
+    # amt_credit_sum_limit_long_limit
+    df_clean['amt_credit_sum_limit_long_limit'] = (df['AMT_CREDIT_SUM_LIMIT'] >= 10000).astype(int)
+
+    # have_amt_credit_sum_overdue
+    df_clean['have_amt_credit_sum_overdue'] = (df['AMT_CREDIT_SUM_OVERDUE'] > 0).astype(int)
+
+    # have_amt_credit_sum_overdue_is_present
+    df_clean['have_amt_credit_sum_overdue_is_present'] = df['AMT_CREDIT_SUM_OVERDUE'].isnull().astype(int)
+
+    # credit_type
+    type_counts = df['CREDIT_TYPE'].value_counts()
+    types_to_keep = type_counts[type_counts >= 200].index
+    df_clean['credit_type'] = np.where(df['CREDIT_TYPE'].isin(types_to_keep), df['CREDIT_TYPE'], 'other')
+
+    # days_credit_update
+    df_clean['days_credit_update'] = np.clip(df['DAYS_CREDIT_UPDATE'], -3000, 0)
+
+    # amt_annuity
+    df_clean['amt_annuity'] = df['AMT_ANNUITY']
+
+    # flag_is_present_amt_annuity
+    df_clean['flag_is_present_amt_annuity'] = df['AMT_ANNUITY'].isnull().astype(int)
+
+
+    df_clean = df_clean.dropna(subset=['amt_credit_sum'])
+
+    df_clean.to_parquet(output_filepath, index=False)
+    print(f'Cleaning finished! File saved to: {output_filepath}')
