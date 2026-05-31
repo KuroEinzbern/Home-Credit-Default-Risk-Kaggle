@@ -2,16 +2,10 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-def log1p_and_clip_p999(series, set_negatives_to_nan=False):
+def clip_p999(series, set_negatives_to_nan=False):
     s = series.copy()
     if set_negatives_to_nan:
         s.loc[s < 0] = np.nan
-    p99_9 = s.quantile(0.999)
-    s.loc[s > p99_9] = p99_9
-    return np.log1p(s)
-
-def clip_p999(series):
-    s = series.copy()
     p99_9 = s.quantile(0.999)
     s.loc[s > p99_9] = p99_9
     return s
@@ -52,40 +46,40 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean['have_negative_balance'] = (df['AMT_BALANCE'] < 0).astype(int)
     
     # amt_positive_balance
-    df_clean['amt_positive_balance'] = np.log1p(df['AMT_BALANCE'].clip(lower=0))
+    df_clean['amt_positive_balance'] = df['AMT_BALANCE'].clip(lower=0)
 
     # amt_negative_balance
-    df_clean['amt_negative_balance'] = np.log1p(df['AMT_BALANCE'].clip(upper=0).abs())
+    df_clean['amt_negative_balance'] = df['AMT_BALANCE'].clip(upper=0).abs()
     
     # diff_total_receivable_balance
     diff_total_balance = df['AMT_TOTAL_RECEIVABLE'] - df['AMT_BALANCE']
-    df_clean['diff_total_receivable_balance'] = np.sign(diff_total_balance) * np.log1p(np.abs(diff_total_balance))
+    df_clean['diff_total_receivable_balance'] = np.sign(diff_total_balance) * np.abs(diff_total_balance)
 
     # amt_credit_limit_actual
-    df_clean['amt_credit_limit_actual'] = np.log1p(df['AMT_CREDIT_LIMIT_ACTUAL'])
+    df_clean['amt_credit_limit_actual'] = df['AMT_CREDIT_LIMIT_ACTUAL']
 
     # amt_drawings_current
     amt_drawings_curr = df['AMT_DRAWINGS_CURRENT'].copy()
     amt_drawings_curr.loc[amt_drawings_curr < 0] = amt_drawings_curr.median()
-    df_clean['amt_drawings_current'] = np.log1p(amt_drawings_curr)
+    df_clean['amt_drawings_current'] = amt_drawings_curr
 
     # amt_drawings_amt_current
     df['AMT_DRAWINGS_ATM_CURRENT'] = df['AMT_DRAWINGS_ATM_CURRENT'].fillna(0)
-    df_clean['amt_drawings_amt_current'] = log1p_and_clip_p999(df['AMT_DRAWINGS_ATM_CURRENT'], set_negatives_to_nan=True)
+    df_clean['amt_drawings_amt_current'] = clip_p999(df['AMT_DRAWINGS_ATM_CURRENT'], set_negatives_to_nan=True)
     
     # amt_drawings_other_current
     df['AMT_DRAWINGS_OTHER_CURRENT'] = df['AMT_DRAWINGS_OTHER_CURRENT'].fillna(0)
-    df_clean['amt_drawings_other_current'] = log1p_and_clip_p999(df['AMT_DRAWINGS_OTHER_CURRENT'])
+    df_clean['amt_drawings_other_current'] = clip_p999(df['AMT_DRAWINGS_OTHER_CURRENT'])
     
     # amt_drawings_pos_current
     df['AMT_DRAWINGS_POS_CURRENT'] = df['AMT_DRAWINGS_POS_CURRENT'].fillna(0)
-    df_clean['amt_drawings_pos_current'] = log1p_and_clip_p999(df['AMT_DRAWINGS_POS_CURRENT'])
+    df_clean['amt_drawings_pos_current'] = clip_p999(df['AMT_DRAWINGS_POS_CURRENT'])
 
     # amt_drawings_is_missing
     df_clean['amt_drawings_is_missing'] = df[['AMT_DRAWINGS_ATM_CURRENT', 'AMT_DRAWINGS_OTHER_CURRENT', 'AMT_DRAWINGS_POS_CURRENT']].isnull().any(axis=1).astype(int)
 
     # amt_inst_min_regularity
-    df_clean['amt_inst_min_regularity'] = log1p_and_clip_p999(df['AMT_INST_MIN_REGULARITY'])
+    df_clean['amt_inst_min_regularity'] = clip_p999(df['AMT_INST_MIN_REGULARITY'])
     
     # amt_inst_min_regularity_is_missing
     df_clean['amt_inst_min_regularity_is_missing'] = df['AMT_INST_MIN_REGULARITY'].isnull().astype(int)
@@ -99,27 +93,27 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     # inconsistency_gap
     gap_condition = (df['AMT_INST_MIN_REGULARITY'] > df['AMT_TOTAL_RECEIVABLE']) & (df['AMT_TOTAL_RECEIVABLE'] > 0)
     gap_values = df['AMT_INST_MIN_REGULARITY'] - df['AMT_TOTAL_RECEIVABLE']
-    df_clean['inconsistency_gap'] = np.where(gap_condition, np.log1p(gap_values.clip(lower=0)), 0)
+    df_clean['inconsistency_gap'] = np.where(gap_condition, gap_values.clip(lower=0), 0)
 
     # diff_payment_current_total
-    df_clean['diff_payment_current_total'] = np.log1p(df['AMT_PAYMENT_CURRENT'] - df['AMT_PAYMENT_TOTAL_CURRENT']+1)
+    df_clean['diff_payment_current_total'] = df['AMT_PAYMENT_CURRENT'] - df['AMT_PAYMENT_TOTAL_CURRENT']+1
 
     # amt_payment_total_current
-    df_clean['amt_payment_total_current'] = log1p_and_clip_p999(df['AMT_PAYMENT_TOTAL_CURRENT'])
+    df_clean['amt_payment_total_current'] = clip_p999(df['AMT_PAYMENT_TOTAL_CURRENT'])
     
     # amt_payment_total_current_is_missing
     df_clean['amt_payment_total_current_is_missing'] = df['AMT_PAYMENT_TOTAL_CURRENT'].isnull().astype(int)
 
     # amt_recivable_principal
     s_principal_clipped = np.where(df['AMT_RECEIVABLE_PRINCIPAL'] < 0, 0, df['AMT_RECEIVABLE_PRINCIPAL'])
-    df_clean['amt_recivable_principal'] = np.log1p(s_principal_clipped + 1)
+    df_clean['amt_recivable_principal'] = s_principal_clipped
 
     # amt_reciavable_principal_positive_balance
     df_clean['amt_reciavable_principal_positive_balance'] = np.where(df['AMT_RECEIVABLE_PRINCIPAL'] < 0, df['AMT_RECEIVABLE_PRINCIPAL'] * -1, 0)
 
     # amt_recivable
     s_recivable_clipped = np.where(df['AMT_RECIVABLE'] < 0, 0, df['AMT_RECIVABLE'])
-    df_clean['amt_recivable'] = np.log1p(s_recivable_clipped)
+    df_clean['amt_recivable'] = s_recivable_clipped
 
     # amt_recivable_positive_balance
     df_clean['amt_recivable_positive_balance'] = np.where(df['AMT_RECIVABLE'] < 0, df['AMT_RECIVABLE'] * -1, 0)
@@ -153,7 +147,7 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean['name_contract_status'] = contract_status
 
     # sk_dpd
-    df_clean['sk_dpd'] = np.log1p(df['SK_DPD'])
+    df_clean['sk_dpd'] = df['SK_DPD']
     
     # sk_dpd_tecnical
     df_clean['sk_dpd_tecnical'] = (df['SK_DPD'] == 1).astype(int)
@@ -162,7 +156,7 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean['sk_dpd_severe'] = (df['SK_DPD'] > 1).astype(int)
 
     # sk_dpd_def
-    df_clean['sk_dpd_def'] = np.log1p(df['SK_DPD_DEF'])
+    df_clean['sk_dpd_def'] = df['SK_DPD_DEF']
     
     # sk_dpd_def_tecnical
     df_clean['sk_dpd_def_tecnical'] = (df['SK_DPD_DEF'] == 1).astype(int)
@@ -223,10 +217,10 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     df_clean['days_entry_payment_is_missing'] = df['DAYS_ENTRY_PAYMENT'].isnull().astype(int)
 
     # amt_instalment
-    df_clean['amt_instalment'] = log1p_and_clip_p999(df['AMT_INSTALMENT'])
+    df_clean['amt_instalment'] = clip_p999(df['AMT_INSTALMENT'])
 
     # amt_payment
-    df_clean['amt_payment'] = log1p_and_clip_p999(df['AMT_PAYMENT'])
+    df_clean['amt_payment'] = clip_p999(df['AMT_PAYMENT'])
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
@@ -283,7 +277,7 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     )
 
     # sk_dpd
-    df_clean['sk_dpd'] = np.log1p(df['SK_DPD'])
+    df_clean['sk_dpd'] = df['SK_DPD']
 
     # sk_dpd_tecnical
     df_clean['sk_dpd_tecnical'] = (df['SK_DPD'] == 1).astype(int)
@@ -292,7 +286,7 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     df_clean['sk_dpd_severe'] = (df['SK_DPD'] > 1).astype(int)
 
     # sk_dpd_def
-    df_clean['sk_dpd_def'] = np.log1p(df['SK_DPD_DEF'])
+    df_clean['sk_dpd_def'] = df['SK_DPD_DEF']
 
     # dpd_def_tecnical
     df_clean['dpd_def_tecnical'] = (df['SK_DPD_DEF'] == 1).astype(int)
@@ -380,17 +374,17 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["id_curr"] = df["SK_ID_CURR"]
     df_clean["name_contract_type"] = df["NAME_CONTRACT_TYPE"]
 
-    df_clean["amt_annuity"] = log1p_and_clip_p999(df["AMT_ANNUITY"])
-    df_clean["amt_application"] = log1p_and_clip_p999(df["AMT_APPLICATION"])    
-    df_clean["amt_credit"] = log1p_and_clip_p999(df["AMT_CREDIT"])  
+    df_clean["amt_annuity"] = clip_p999(df["AMT_ANNUITY"])
+    df_clean["amt_application"] = clip_p999(df["AMT_APPLICATION"])    
+    df_clean["amt_credit"] = clip_p999(df["AMT_CREDIT"])  
 
 
 
-    df_clean["amt_down_payment"] = log1p_and_clip_p999(df["AMT_DOWN_PAYMENT"],set_negatives_to_nan=True)  
+    df_clean["amt_down_payment"] = clip_p999(df["AMT_DOWN_PAYMENT"],set_negatives_to_nan=True)  
     df_clean["amt_down_payment_is_missing"] = df["AMT_DOWN_PAYMENT"].isna().astype(int)
 
 
-    df_clean["amt_goods_price"] = log1p_and_clip_p999(df["AMT_GOODS_PRICE"])  
+    df_clean["amt_goods_price"] = clip_p999(df["AMT_GOODS_PRICE"])  
     df_clean["amt_goods_price_is_missing"] = df["AMT_GOODS_PRICE"].isna().astype(int)
 
 
@@ -400,7 +394,7 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["flag_last_application_for_the_contract"]= df["FLAG_LAST_APPL_PER_CONTRACT"]
     df_clean["flag_last_application_in_day"]= df["NFLAG_LAST_APPL_IN_DAY"]
 
-    df_clean["rate_down_payment"] = log1p_and_clip_p999(df["RATE_DOWN_PAYMENT"],set_negatives_to_nan=True)  
+    df_clean["rate_down_payment"] = clip_p999(df["RATE_DOWN_PAYMENT"],set_negatives_to_nan=True)  
     df_clean["down_payment_is_missing"] = df["RATE_DOWN_PAYMENT"].isna().astype(int)
 
     df_clean["rate_interesting_is_missing"] = df["RATE_INTEREST_PRIMARY"].isna().astype(int)
@@ -719,7 +713,7 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     df_clean['days_enddate_fact_is_present'] = df['DAYS_ENDDATE_FACT'].isnull().astype(int)
 
     # amt_credit_max_overdue
-    df_clean['amt_credit_max_overdue'] = log1p_and_clip_p999(df['AMT_CREDIT_MAX_OVERDUE'])
+    df_clean['amt_credit_max_overdue'] = clip_p999(df['AMT_CREDIT_MAX_OVERDUE'])
 
     # amt_credit_max_overdue_is_present
     df_clean['amt_credit_max_overdue_is_present'] = df['AMT_CREDIT_MAX_OVERDUE'].isnull().astype(int)
@@ -728,7 +722,7 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     df_clean['cnt_credit_prolong'] = df['CNT_CREDIT_PROLONG']
 
     # amt_credit_sum
-    df_clean['amt_credit_sum'] = log1p_and_clip_p999(df['AMT_CREDIT_SUM'])
+    df_clean['amt_credit_sum'] = clip_p999(df['AMT_CREDIT_SUM'])
 
     # amt_credit_sum_debt
     is_negative_mask=df['AMT_CREDIT_SUM_DEBT'] < 0
