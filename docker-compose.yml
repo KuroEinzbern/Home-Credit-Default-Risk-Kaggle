@@ -24,7 +24,7 @@ services:
     ports:
       - "5000:5000"
     command: >
-      sh -c "pip install psycopg2-binary && mlflow server  --host 0.0.0.0  --port 5000  --backend-store-uri postgresql://appuser:securepassword@db:5432/applications --default-artifact-root /mlflow_store"
+      sh -c "pip install psycopg2-binary && mlflow server  --host 0.0.0.0  --port 5000  --backend-store-uri postgresql://appuser:securepassword@db:5432/applications --artifacts-destination /mlflow_store"
 volumes:
   mlflow_data:
   db_data:

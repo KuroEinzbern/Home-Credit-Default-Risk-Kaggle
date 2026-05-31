@@ -648,12 +648,21 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
 
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
+
+     #drop inconsistencies
+    rows_to_drop = (
+        ((df['CREDIT_ACTIVE'] == 'Active') & (df['DAYS_ENDDATE_FACT'].notna())) | 
+        ((df['CREDIT_ACTIVE'] == 'Closed') & (df['DAYS_ENDDATE_FACT'].isna())) |
+        (df["AMT_CREDIT_SUM"].isna()) 
+    )
+    index_to_drop=df[rows_to_drop].index
+    df.drop(index=index_to_drop,inplace=True)
     
     # sk_id_curr
     df_clean['sk_id_curr'] = df['SK_ID_CURR']
 
     # sk_bureau_id
-    df_clean['sk_bureau_id'] = df['SK_BUREAU_ID']
+    df_clean['id_bureau'] = df['SK_ID_BUREAU']
 
     # credit_active
     credit_active_status = df['CREDIT_ACTIVE'].replace({'Bad debt': 'Sold'})
@@ -673,9 +682,7 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
 
     # days_credit_enddate
     df_clean['days_credit_enddate'] = df['DAYS_CREDIT_ENDDATE']
-    mask_drop = (df_clean['credit_active'] == 'Closed') & df['DAYS_ENDDATE_FACT'].notnull()
-    df_clean = df_clean[~mask_drop]
-    mask_nan_range = (df_clean['DAYS_CREDIT_ENDDATE'] >= 12000) & (df_clean['DAYS_CREDIT_ENDDATE'] <= 31500)
+    mask_nan_range = (df['DAYS_CREDIT_ENDDATE'] >= 12000) & (df['DAYS_CREDIT_ENDDATE'] <= 31500)
     df_clean.loc[mask_nan_range, 'DAYS_CREDIT_ENDDATE'] = np.nan
 
     # days_credit_enddate_first_cluster_values
@@ -724,7 +731,11 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     df_clean['amt_credit_sum'] = log1p_and_clip_p999(df['AMT_CREDIT_SUM'])
 
     # amt_credit_sum_debt
-    df_clean['amt_credit_sum_debt'] = log1p_and_clip_p999(df['AMT_CREDIT_SUM_DEBT'])
+    is_negative_mask=df['AMT_CREDIT_SUM_DEBT'] < 0
+    df_clean["amt_credit_sum_debt_negative_balance"]= np.where(df['AMT_CREDIT_SUM_DEBT'] < 0, df['AMT_CREDIT_SUM_DEBT'] , 0)
+    df["AMT_CREDIT_SUM_DEBT"]= df["AMT_CREDIT_SUM_DEBT"].mask(is_negative_mask,0) 
+    df_clean['amt_credit_sum_debt'] = clip_p999(df['AMT_CREDIT_SUM_DEBT'])
+    
 
     # amt_credit_sum_debt_is_present
     df_clean['amt_credit_sum_debt_is_present'] = df['AMT_CREDIT_SUM_DEBT'].isnull().astype(int)
@@ -765,7 +776,6 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     df_clean['flag_is_present_amt_annuity'] = df['AMT_ANNUITY'].isnull().astype(int)
 
 
-    df_clean = df_clean.dropna(subset=['amt_credit_sum'])
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')

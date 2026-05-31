@@ -67,7 +67,7 @@ def persist_and_export_feature_importance(feature_importance_df: pd.DataFrame)->
     file_path= str(ARTIFACTS_DIR / "feature_importance.csv")
     with open(file_path, "w", encoding="utf-8") as f:
         feature_importance_df.to_csv(f,index=False)
-    mlflow.log_artifact(file_path, artifact_path="model_analysis")
+    mlflow.log_artifact(file_path)
     return
 
 
