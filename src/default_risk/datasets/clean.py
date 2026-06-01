@@ -191,10 +191,10 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     
     df_clean = pd.DataFrame()
     
-    # sk_id_prev
-    df_clean['sk_id_prev'] = df['SK_ID_PREV']
+    # id_prev
+    df_clean['id_prev'] = df['SK_ID_PREV']
 
-    # sk_id_curr
+    # id_curr
     # Passthrough, Identifier, No nulls
     df_clean['id_curr'] = df['SK_ID_CURR']
 
@@ -461,7 +461,7 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
-    df_clean = pd.DataFrame()
+    df_clean = {}
 
     #drop inconsistencies
     rows_to_drop = (
@@ -483,13 +483,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     ,"LIVINGAREA_MODE","NONLIVINGAPARTMENTS_MODE","NONLIVINGAREA_MODE","APARTMENTS_MEDI","BASEMENTAREA_MEDI","YEARS_BEGINEXPLUATATION_MEDI","YEARS_BUILD_MEDI","COMMONAREA_MEDI"
     ,"ELEVATORS_MEDI","ENTRANCES_MEDI","FLOORSMAX_MEDI","FLOORSMIN_MEDI","LANDAREA_MEDI","LIVINGAPARTMENTS_MEDI","LIVINGAREA_MEDI","NONLIVINGAPARTMENTS_MEDI","NONLIVINGAREA_MEDI","FONDKAPREMONT_MODE","HOUSETYPE_MODE","TOTALAREA_MODE","WALLSMATERIAL_MODE","EMERGENCYSTATE_MODE"]
     
-    building_features_names_for_clean_df= [column_name.lower() for column_name in building_features_names]
-
 
     documents_flags_names= ["FLAG_DOCUMENT_"+ str(i) for i in range (2,21)]
-
-
-
 
     df_clean["id_curr"] = df["SK_ID_CURR"]
 
@@ -569,8 +564,12 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["hour_apply_start"] = df["HOUR_APPR_PROCESS_START"]
 
-    df_clean[["flag_region_not_live","flag_region_not_work","flag_live_region_not_work","flag_not_live_city","flag_city_not_work","flag_live_city_not_work"]] = df[["REG_REGION_NOT_LIVE_REGION","REG_REGION_NOT_WORK_REGION","LIVE_REGION_NOT_WORK_REGION","REG_CITY_NOT_LIVE_CITY","REG_CITY_NOT_WORK_CITY","LIVE_CITY_NOT_WORK_CITY"]]
-
+    df_clean["flag_region_not_live"] = df["REG_REGION_NOT_LIVE_REGION"]
+    df_clean["flag_region_not_work"] = df["REG_REGION_NOT_WORK_REGION"]
+    df_clean["flag_live_region_not_work"] = df["LIVE_REGION_NOT_WORK_REGION"]
+    df_clean["flag_not_live_city"] = df["REG_CITY_NOT_LIVE_CITY"]
+    df_clean["flag_city_not_work"] = df["REG_CITY_NOT_WORK_CITY"]
+    df_clean["flag_live_city_not_work"] = df["LIVE_CITY_NOT_WORK_CITY"]
 
     mapping_organization_type = {
         "Religion": "Other",
@@ -595,13 +594,15 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["ext_source_2"] = df["EXT_SOURCE_2"]
 
-    df_clean["ext_source_2_is_missing"] = df["EXT_SOURCE_1"].isna().astype(int)
+    df_clean["ext_source_2_is_missing"] = df["EXT_SOURCE_2"].isna().astype(int)
     
     df_clean["ext_source_3"] = df["EXT_SOURCE_3"]
 
-    df_clean["ext_source_3_is_missing"] = df["EXT_SOURCE_1"].isna().astype(int)
+    df_clean["ext_source_3_is_missing"] = df["EXT_SOURCE_3"].isna().astype(int)
 
-    df_clean[building_features_names_for_clean_df] = df[building_features_names]
+    for src in building_features_names:
+        dst = src.lower()
+        df_clean[dst] = df[src]
 
     df_clean["obs_30_cnt_social_circle"] = df["OBS_30_CNT_SOCIAL_CIRCLE"]
 
@@ -615,7 +616,16 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["days_last_phone_change"] = df["DAYS_LAST_PHONE_CHANGE"]
 
-    df_clean[["flag_document_3","flag_document_5","flag_document_6","flag_document_8","flag_document_9","flag_document_11","flag_document_13","flag_document_14","flag_document_16","flag_document_18"]] = df[["FLAG_DOCUMENT_3","FLAG_DOCUMENT_5","FLAG_DOCUMENT_6","FLAG_DOCUMENT_8","FLAG_DOCUMENT_9","FLAG_DOCUMENT_11","FLAG_DOCUMENT_13","FLAG_DOCUMENT_14","FLAG_DOCUMENT_16","FLAG_DOCUMENT_18"]]
+    df_clean["flag_document_3"] = df["FLAG_DOCUMENT_3"]
+    df_clean["flag_document_5"] = df["FLAG_DOCUMENT_5"]
+    df_clean["flag_document_6"] = df["FLAG_DOCUMENT_6"]
+    df_clean["flag_document_8"] = df["FLAG_DOCUMENT_8"]
+    df_clean["flag_document_9"] = df["FLAG_DOCUMENT_9"]
+    df_clean["flag_document_11"] = df["FLAG_DOCUMENT_11"]
+    df_clean["flag_document_13"] = df["FLAG_DOCUMENT_13"]
+    df_clean["flag_document_14"] = df["FLAG_DOCUMENT_14"]
+    df_clean["flag_document_16"] = df["FLAG_DOCUMENT_16"]
+    df_clean["flag_document_18"] = df["FLAG_DOCUMENT_18"]
 
     df_clean["documents_count"] = df[documents_flags_names].sum(axis=1)
 
@@ -628,10 +638,11 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     df_clean["client_without_querys"] = df["AMT_REQ_CREDIT_BUREAU_YEAR"].isna().astype(int)
 
 
-    df_clean.to_parquet(output_filepath, index=False)
+    df_clean_copied = pd.DataFrame(df_clean)
+    df_clean_copied.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
         
-    return df_clean
+    return df_clean_copied
 
 
 def clean_bureau(input_filepath: Path, output_filepath: Path):
@@ -651,10 +662,10 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     index_to_drop=df[rows_to_drop].index
     df.drop(index=index_to_drop,inplace=True)
     
-    # sk_id_curr
+    # id_curr
     df_clean['id_curr'] = df['SK_ID_CURR']
 
-    # sk_bureau_id
+    # bureau_id
     df_clean['id_bureau'] = df['SK_ID_BUREAU']
 
     # credit_active
