@@ -191,12 +191,12 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     
     df_clean = pd.DataFrame()
     
-    # sk_id_prev
-    df_clean['sk_id_prev'] = df['SK_ID_PREV']
+    # id_prev
+    df_clean['id_prev'] = df['SK_ID_PREV']
 
-    # sk_id_curr
+    # id_curr
     # Passthrough, Identifier, No nulls
-    df_clean['sk_id_curr'] = df['SK_ID_CURR']
+    df_clean['id_curr'] = df['SK_ID_CURR']
 
     # num_instalment_version
     df_clean['num_instalment_version'] = clip_p99_x4_and_fill(df['NUM_INSTALMENT_VERSION'], fill_nulls=False)
@@ -492,7 +492,7 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     documents_flags_names= ["FLAG_DOCUMENT_"+ str(i) for i in range (2,21)]
 
-    df_clean["sk_id_curr"] = df["SK_ID_CURR"]
+    df_clean["id_curr"] = df["SK_ID_CURR"]
 
     df_clean["target"] = df["TARGET"]
 
@@ -668,10 +668,10 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     index_to_drop=df[rows_to_drop].index
     df.drop(index=index_to_drop,inplace=True)
     
-    # sk_id_curr
-    df_clean['sk_id_curr'] = df['SK_ID_CURR']
+    # id_curr
+    df_clean['id_curr'] = df['SK_ID_CURR']
 
-    # sk_bureau_id
+    # bureau_id
     df_clean['id_bureau'] = df['SK_ID_BUREAU']
 
     # credit_active
