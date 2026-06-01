@@ -196,7 +196,7 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
 
     # sk_id_curr
     # Passthrough, Identifier, No nulls
-    df_clean['sk_id_curr'] = df['SK_ID_CURR']
+    df_clean['id_curr'] = df['SK_ID_CURR']
 
     # num_instalment_version
     df_clean['num_instalment_version'] = clip_p99_x4_and_fill(df['NUM_INSTALMENT_VERSION'], fill_nulls=False)
@@ -369,9 +369,6 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     index_to_drop=df[(df["AMT_ANNUITY"].isnull()) & (df["CNT_PAYMENT"].notna())].index
     df.drop(index=index_to_drop,inplace=True)
 
-
-
-
     df_clean["id_prev"] = df["SK_ID_PREV"]
     df_clean["id_curr"] = df["SK_ID_CURR"]
     df_clean["name_contract_type"] = df["NAME_CONTRACT_TYPE"]
@@ -379,7 +376,6 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["amt_annuity"] = clip_p999(df["AMT_ANNUITY"])
     df_clean["amt_application"] = clip_p999(df["AMT_APPLICATION"])    
     df_clean["amt_credit"] = clip_p999(df["AMT_CREDIT"])  
-
 
 
     df_clean["amt_down_payment"] = clip_p999(df["AMT_DOWN_PAYMENT"],set_negatives_to_nan=True)  
@@ -436,8 +432,6 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["name_yield_group"] = df["NAME_YIELD_GROUP"]
 
     df_clean["product_combination"] = df["PRODUCT_COMBINATION"]
-
-
 
     df_clean["days_first_drawing_has_sentinel_value"] = (df["DAYS_FIRST_DRAWING"] == 365243).astype(int)
     df_clean["days_first_drawing"] = df["DAYS_FIRST_DRAWING"].mask(df["DAYS_FIRST_DRAWING"] == 365243,np.nan)
@@ -497,7 +491,7 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
 
 
-    df_clean["sk_id_curr"] = df["SK_ID_CURR"]
+    df_clean["id_curr"] = df["SK_ID_CURR"]
 
     df_clean["target"] = df["TARGET"]
 
@@ -658,7 +652,7 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     df.drop(index=index_to_drop,inplace=True)
     
     # sk_id_curr
-    df_clean['sk_id_curr'] = df['SK_ID_CURR']
+    df_clean['id_curr'] = df['SK_ID_CURR']
 
     # sk_bureau_id
     df_clean['id_bureau'] = df['SK_ID_BUREAU']
