@@ -185,6 +185,8 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
+ 
+
     df = pd.read_parquet(input_filepath)
     
     df_clean = pd.DataFrame()
@@ -395,12 +397,13 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["flag_last_application_in_day"]= df["NFLAG_LAST_APPL_IN_DAY"]
 
     df_clean["rate_down_payment"] = clip_p999(df["RATE_DOWN_PAYMENT"],set_negatives_to_nan=True)  
-    df_clean["down_payment_is_missing"] = df["RATE_DOWN_PAYMENT"].isna().astype(int)
+    df_clean["rate_down_payment_is_missing"] = df["RATE_DOWN_PAYMENT"].isna().astype(int)
 
     df_clean["rate_interesting_is_missing"] = df["RATE_INTEREST_PRIMARY"].isna().astype(int)
 
     df_clean["rate_privileged_is_missing"] = df["RATE_INTEREST_PRIVILEGED"].isna().astype(int)
-
+    
+    df_clean["name_contract_status"] = df["NAME_CONTRACT_STATUS"]
 
     df_clean["name_cash_loan_purpose"]= agroup_ultra_rare_categories(df["NAME_CASH_LOAN_PURPOSE"],1000)
 
@@ -426,6 +429,10 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["flag_have_no_surface_sellerplace_area"] = (df["SELLERPLACE_AREA"] == 0).astype(int)
     df_clean["sellerplace_area_is_missing"] = df["SELLERPLACE_AREA"].isna().astype(int)
 
+    df_clean["name_seller_industry"] = df["NAME_SELLER_INDUSTRY"]
+
+    df_clean["cnt_payment"] = df["CNT_PAYMENT"]
+
     df_clean["name_yield_group"] = df["NAME_YIELD_GROUP"]
 
     df_clean["product_combination"] = df["PRODUCT_COMBINATION"]
@@ -444,7 +451,7 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["days_last_due_has_sentinel_value"] = (df["DAYS_LAST_DUE"] == 365243).astype(int)
     df_clean["days_last_due"] = df["DAYS_LAST_DUE"].mask(df["DAYS_LAST_DUE"] == 365243,np.nan)
 
-    df_clean["days_ 0rmination_has_sentinel_value"] = (df["DAYS_TERMINATION"] == 365243).astype(int)
+    df_clean["days_ termination_has_sentinel_value"] = (df["DAYS_TERMINATION"] == 365243).astype(int)
     df_clean["days_termination"] = df["DAYS_TERMINATION"].mask(df["DAYS_TERMINATION"] == 365243,np.nan)
 
     df_clean["nflag_insured_on_approval"] = df["NFLAG_INSURED_ON_APPROVAL"]
@@ -471,8 +478,22 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
         (df["CNT_FAM_MEMBERS"].isna()) |
         (df["DAYS_LAST_PHONE_CHANGE"].isna()) 
     )
+    
+
     index_to_drop=df[rows_to_drop].index
     df.drop(index=index_to_drop,inplace=True)
+
+    building_features_names= ["APARTMENTS_AVG", "BASEMENTAREA_AVG","YEARS_BEGINEXPLUATATION_AVG","YEARS_BUILD_AVG","COMMONAREA_AVG","ELEVATORS_AVG","ENTRANCES_AVG"
+    ,"FLOORSMAX_AVG","FLOORSMIN_AVG","LANDAREA_AVG","LIVINGAPARTMENTS_AVG","LIVINGAREA_AVG","NONLIVINGAPARTMENTS_AVG","NONLIVINGAREA_AVG","APARTMENTS_MODE","BASEMENTAREA_MODE",
+    "YEARS_BEGINEXPLUATATION_MODE","YEARS_BUILD_MODE","COMMONAREA_MODE","ELEVATORS_MODE","ENTRANCES_MODE","FLOORSMAX_MODE","FLOORSMIN_MODE","LANDAREA_MODE","LIVINGAPARTMENTS_MODE"
+    ,"LIVINGAREA_MODE","NONLIVINGAPARTMENTS_MODE","NONLIVINGAREA_MODE","APARTMENTS_MEDI","BASEMENTAREA_MEDI","YEARS_BEGINEXPLUATATION_MEDI","YEARS_BUILD_MEDI","COMMONAREA_MEDI"
+    ,"ELEVATORS_MEDI","ENTRANCES_MEDI","FLOORSMAX_MEDI","FLOORSMIN_MEDI","LANDAREA_MEDI","LIVINGAPARTMENTS_MEDI","LIVINGAREA_MEDI","NONLIVINGAPARTMENTS_MEDI","NONLIVINGAREA_MEDI","FONDKAPREMONT_MODE","HOUSETYPE_MODE","TOTALAREA_MODE","WALLSMATERIAL_MODE","EMERGENCYSTATE_MODE"]
+    
+    building_features_names_for_clean_df= [column_name.lower() for column_name in building_features_names]
+
+
+    documents_flags_names= ["FLAG_DOCUMENT_"+ str(i) for i in range (2,21)]
+
 
 
 
@@ -482,6 +503,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["name_contract_type"] = df["NAME_CONTRACT_TYPE"]
 
+    df_clean["code_gender"] = df["CODE_GENDER"]
+
     df_clean["flag_own_car"] = df["FLAG_OWN_CAR"]
 
     df_clean["flag_own_realty"] = df["FLAG_OWN_REALTY"]
@@ -490,13 +513,16 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     df_clean["cnt_children"] = df["CNT_CHILDREN"].mask(df["CNT_CHILDREN"] > capping_value_children, capping_value_children)
 
     df_clean["amt_income_total"] = clip_p999(df["AMT_INCOME_TOTAL"])
-    
+
+    df_clean["amt_credit"] = df["AMT_CREDIT"]
+
+    df_clean["amt_annuity"] = df["AMT_ANNUITY"]
+
     df_clean["amt_goods_price"] = df["AMT_GOODS_PRICE"]
+    df_clean["amt_goods_price_is_missing"] = df["AMT_GOODS_PRICE"].isna().astype(int)
 
-
-    df_clean["amt_goods_price"] = df["NAME_TYPE_SUITE"]
-    df_clean["amt_goods_price_is_missing"] = df["NAME_TYPE_SUITE"].isna().astype(int)
-
+    df_clean["name_type_suite"] = df["NAME_TYPE_SUITE"]
+    df_clean["name_type_suite_is_missing"] = df["NAME_TYPE_SUITE"].isna().astype(int)
 
 
     df_clean["name_income_type"] = df["NAME_INCOME_TYPE"].mask((df["NAME_INCOME_TYPE"] == "Unemployed") | (df["NAME_INCOME_TYPE"]== 'Maternity leave'),"high_risk_inactive").astype("category")
@@ -519,12 +545,14 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     df_clean["days_id_publish"] = df["DAYS_ID_PUBLISH"]
 
     df_clean["own_car_age"] = df["OWN_CAR_AGE"]
+
     df_clean["own_car_age_is_missing"] = df["OWN_CAR_AGE"].isna().astype(int)
 
     df_clean["flag_emp_phone"] = df["FLAG_EMP_PHONE"]
 
     df_clean["flag_cont_mobile"] = df["FLAG_CONT_MOBILE"]
 
+    df_clean["flag_phone"] = df["FLAG_PHONE"]
 
     df_clean["flag_email"] = df["FLAG_EMAIL"]
 
@@ -547,17 +575,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["hour_apply_start"] = df["HOUR_APPR_PROCESS_START"]
 
-    df_clean["flag_region_not_live"] = df["REG_REGION_NOT_LIVE_REGION"]
+    df_clean[["flag_region_not_live","flag_region_not_work","flag_live_region_not_work","flag_not_live_city","flag_city_not_work","flag_live_city_not_work"]] = df[["REG_REGION_NOT_LIVE_REGION","REG_REGION_NOT_WORK_REGION","LIVE_REGION_NOT_WORK_REGION","REG_CITY_NOT_LIVE_CITY","REG_CITY_NOT_WORK_CITY","LIVE_CITY_NOT_WORK_CITY"]]
 
-    df_clean["flag_region_not_work"] = df["REG_REGION_NOT_WORK_REGION"]
-
-    df_clean["flag_live_region_not_work"] = df["LIVE_REGION_NOT_WORK_REGION"]
-
-    df_clean["flag_not_live_city"] = df["REG_CITY_NOT_LIVE_CITY"]
-
-    df_clean["flag_city_not_work"] = df["REG_CITY_NOT_WORK_CITY"]
-
-    df_clean["flag_live_city_not_work"] = df["LIVE_CITY_NOT_WORK_CITY"]
 
     mapping_organization_type = {
         "Religion": "Other",
@@ -574,7 +593,7 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
         "Industry: type 6" : "Other industry",
     }
 
-    df_clean["organization_type"] = df["ORGANIZATION_TYPE"].replace(mapping_ocupation_type).astype("category")
+    df_clean["organization_type"] = df["ORGANIZATION_TYPE"].replace(mapping_organization_type).astype("category")
 
     df_clean["ext_source_1"] = df["EXT_SOURCE_1"]
     
@@ -588,6 +607,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["ext_source_3_is_missing"] = df["EXT_SOURCE_1"].isna().astype(int)
 
+    df_clean[building_features_names_for_clean_df] = df[building_features_names]
+
     df_clean["obs_30_cnt_social_circle"] = df["OBS_30_CNT_SOCIAL_CIRCLE"]
 
     df_clean["def_30_cnt_social_circle"] = df["DEF_30_CNT_SOCIAL_CIRCLE"]
@@ -598,27 +619,11 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean["info_of_social_circule_is_missing"] = df["OBS_30_CNT_SOCIAL_CIRCLE"].isna().astype(int)
 
-    df_clean["days_last_phone_change"] = df["DAYS_LAST_PHONE_CHANGE"].isna().astype(int)
+    df_clean["days_last_phone_change"] = df["DAYS_LAST_PHONE_CHANGE"]
 
-    df_clean["flag_document_3"] = df["FLAG_DOCUMENT_3"]
+    df_clean[["flag_document_3","flag_document_5","flag_document_6","flag_document_8","flag_document_9","flag_document_11","flag_document_13","flag_document_14","flag_document_16","flag_document_18"]] = df[["FLAG_DOCUMENT_3","FLAG_DOCUMENT_5","FLAG_DOCUMENT_6","FLAG_DOCUMENT_8","FLAG_DOCUMENT_9","FLAG_DOCUMENT_11","FLAG_DOCUMENT_13","FLAG_DOCUMENT_14","FLAG_DOCUMENT_16","FLAG_DOCUMENT_18"]]
 
-    df_clean["flag_document_5"] = df["FLAG_DOCUMENT_5"]
-
-    df_clean["flag_document_6"] = df["FLAG_DOCUMENT_6"]
-
-    df_clean["flag_document_8"] = df["FLAG_DOCUMENT_8"]
-
-    df_clean["flag_document_9"] = df["FLAG_DOCUMENT_9"]
-
-    df_clean["flag_document_11"] = df["FLAG_DOCUMENT_11"]
-
-    df_clean["flag_document_13"] = df["FLAG_DOCUMENT_13"]
-
-    df_clean["flag_document_14"] = df["FLAG_DOCUMENT_14"]
-
-    df_clean["flag_document_16"] = df["FLAG_DOCUMENT_16"]
-
-    df_clean["flag_document_18"] = df["FLAG_DOCUMENT_18"]
+    df_clean["documents_count"] = df[documents_flags_names].sum(axis=1)
 
     df_clean["amt_req_credit_berau_hour"] = df["AMT_REQ_CREDIT_BUREAU_HOUR"]
     df_clean["amt_req_credit_breau_day"] = df["AMT_REQ_CREDIT_BUREAU_DAY"]
