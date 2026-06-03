@@ -374,9 +374,10 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["name_contract_type"] = df["NAME_CONTRACT_TYPE"]
 
     df_clean["amt_annuity"] = clip_p999(df["AMT_ANNUITY"])
+    df_clean["amt_annuity_and_cnt_payment_are_missing"]= df["AMT_ANNUITY"].isna().astype(int)
+
     df_clean["amt_application"] = clip_p999(df["AMT_APPLICATION"])    
     df_clean["amt_credit"] = clip_p999(df["AMT_CREDIT"])  
-
 
     df_clean["amt_down_payment"] = clip_p999(df["AMT_DOWN_PAYMENT"],set_negatives_to_nan=True)  
     df_clean["amt_down_payment_is_missing"] = df["AMT_DOWN_PAYMENT"].isna().astype(int)
@@ -445,7 +446,7 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["days_last_due_has_sentinel_value"] = (df["DAYS_LAST_DUE"] == 365243).astype(int)
     df_clean["days_last_due"] = df["DAYS_LAST_DUE"].mask(df["DAYS_LAST_DUE"] == 365243,np.nan)
 
-    df_clean["days_ termination_has_sentinel_value"] = (df["DAYS_TERMINATION"] == 365243).astype(int)
+    df_clean["days_termination_has_sentinel_value"] = (df["DAYS_TERMINATION"] == 365243).astype(int)
     df_clean["days_termination"] = df["DAYS_TERMINATION"].mask(df["DAYS_TERMINATION"] == 365243,np.nan)
 
     df_clean["nflag_insured_on_approval"] = df["NFLAG_INSURED_ON_APPROVAL"]
