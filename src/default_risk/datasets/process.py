@@ -27,8 +27,13 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
         "amt_credit_sum_limit": ["max"],
         "cnt_credit_prolong": ["max", "min", "mean"],
         "amt_credit_sum": ["max", "min", "mean"],
-        
     })
 
-    combined_rows = pd.concat([bureau_aggregattted, last_three_columns], axis=0, ignore_index=True)
+    bureau_aggregattted.columns = [
+        f"{col}_{stat.__name__ if callable(stat) else stat}" 
+        for col, stat in bureau_aggregattted.columns
+    ]
+
+    combined_rows = pd.concat([bureau_aggregattted, last_three_columns],  axis=1 )
+    combined_rows.reset_index(inplace=True)
     combined_rows.to_parquet(output_filepath, index=False)
