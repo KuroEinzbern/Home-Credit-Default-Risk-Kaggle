@@ -185,7 +185,16 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
- 
+    df.sort_values(["SK_ID_PREV","DAYS_INSTALMENT"],inplace=True)
+
+    df["intial_version"]= df.groupby("id_prev")["num_instalment_version"].transform("first")
+
+    nans_to_drop= (df["AMT_PAYMENT"].isna()) & (df["num_instalment_version"] != df["intial_version"])
+
+
+    index_to_drop=df[nans_to_drop].index
+    df.drop(index=index_to_drop,inplace=True)
+
 
     df = pd.read_parquet(input_filepath)
     

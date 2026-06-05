@@ -42,4 +42,5 @@ SPLITS_DIR.mkdir(exist_ok=True,parents=True)
 CLEANS_DIR.mkdir(exist_ok=True,parents=True)
 INTERIM_DATA_DIR.mkdir(exist_ok=True,parents=True)
 ARTIFACTS_DIR.mkdir(exist_ok=True,parents=True)
+PROCESSED_DIR.mkdir(exist_ok=True,parents=True)
 

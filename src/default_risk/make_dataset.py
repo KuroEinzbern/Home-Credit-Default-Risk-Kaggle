@@ -6,6 +6,7 @@ from default_risk.datasets.extract import split_dataset, canonizate
 from collections.abc import Callable
 
 from default_risk.datasets.process import process_bureau
+from default_risk.datasets.process import process_prev_application
 
 canonizated_tables: dict ={}
 
@@ -31,7 +32,7 @@ cleaning_dict: dict[str, Callable] = {
 
 procesing_dict: dict[str, Callable] = {
         "application_train" : lambda *args: None,
-        "previous_application" : lambda *args: None,
+        "previous_application" : process_prev_application,
         "credit_card_balance" : lambda *args: None,
         "installments_payments" : lambda *args: None,
         "POS_CASH_balance" : lambda *args: None,
