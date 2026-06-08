@@ -21,21 +21,58 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
         mode_series = x.mode()
         return mode_series.iloc[0] if not mode_series.empty else pd.NA
 
-    bureau_aggregattted = bureau_df.groupby("id_curr").agg({
+    bureau_df["log_amt_credit_sum"] = np.log1p(bureau_df["amt_credit_sum"])
+    bureau_df["ratio_credit_annuity"]= np.where(bureau_df["amt_annuity"] !=0, bureau_df["amt_credit_sum"] / bureau_df["amt_annuity"] , np.nan )  
+
+    bureau_df["credit_active"]=bureau_df["credit_active"].str.lower()
+    bureau_df= pd.get_dummies(bureau_df, columns=["credit_active"], dtype=int)
+    
+
+    bureau_aggregated = bureau_df.groupby("id_curr").agg({
+
+
         "id_curr": ["count"],
-        "flag_have_credit_day_overdue": ["count"],
-        "credit_type": [get_first_mode],
-        "amt_credit_sum_limit": ["max"],
-        "cnt_credit_prolong": ["max", "min", "mean"],
-        "amt_credit_sum": ["max", "min", "mean"],
+    
+        #monetary
+        "amt_credit_sum": ["max", "min","sum"],
+        "amt_credit_sum_limit": ["max","mean","min"],
+        "amt_annuity" : ["max","mean","min"],
+        "amt_credit_sum_debt" : ["max","mean","sum"],
+
+
+        #log_transformed
+        "log_amt_credit_sum": ["mean","std"],
+
+        #counters
+        "cnt_credit_prolong": ["max","mean","sum"],
+        "days_credit_update": ["min","max","mean"], 
+        "days_credit": ["min","max","mean"], 
+        "days_enddate_fact": ["max"], 
+
+        #other
+        "ratio_credit_annuity" : ["max","mean","min"],
+        
+        #categoricals
+        "credit_active_active" : ["mean","sum"],
+        "credit_active_closed" : ["mean","sum"],
+        "credit_active_sold" : ["mean","sum"],
+        "amt_credit_sum_overdue_is_missing": ["mean","sum"],
+        "amt_credit_sum_debt_is_negative": ["mean","sum"],
+        "days_enddate_fact_is_missing" : ["mean","sum"],
+        "flag_have_credit_day_overdue": ["mean","sum"],
+        "have_amt_credit_sum_overdue" : ["mean","sum"],
+        "amt_credit_sum_limit_is_missing" : ["mean","sum"],
+        "amt_credit_sum_limit_is_zero" : ["mean","sum"],
+        "amt_annuity_is_missing" : ["mean","sum"],
+
     })
 
-    bureau_aggregattted.columns = [
+    bureau_aggregated.columns = [
         f"{col}_{stat.__name__ if callable(stat) else stat}" 
-        for col, stat in bureau_aggregattted.columns
+        for col, stat in bureau_aggregated.columns
     ]
 
-    combined_rows = pd.concat([bureau_aggregattted, last_three_columns],  axis=1 )
+    combined_rows = pd.concat([bureau_aggregated, last_three_columns],  axis=1 )
     combined_rows.reset_index(inplace=True)
     combined_rows.to_parquet(output_filepath, index=False)
 

@@ -185,18 +185,18 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
+    df = pd.read_parquet(input_filepath)
+
     df.sort_values(["SK_ID_PREV","DAYS_INSTALMENT"],inplace=True)
 
-    df["intial_version"]= df.groupby("id_prev")["num_instalment_version"].transform("first")
+    df["INITIAL_VERSION"]= df.groupby("SK_ID_PREV")["NUM_INSTALMENT_VERSION"].transform("first")
 
-    nans_to_drop= (df["AMT_PAYMENT"].isna()) & (df["num_instalment_version"] != df["intial_version"])
+    nans_to_drop= (df["AMT_PAYMENT"].isna()) & (df["NUM_INSTALMENT_VERSION"] != df["INITIAL_VERSION"])
 
 
     index_to_drop=df[nans_to_drop].index
     df.drop(index=index_to_drop,inplace=True)
 
-
-    df = pd.read_parquet(input_filepath)
     
     df_clean = pd.DataFrame()
     
@@ -210,7 +210,10 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     # num_instalment_version
     df_clean['num_instalment_version'] = clip_p99_x4_and_fill(df['NUM_INSTALMENT_VERSION'], fill_nulls=False)
 
-    # num_instalment_number
+
+    df_clean['initial_version'] = df['INITIAL_VERSION']
+
+
     df_clean['num_instalment_number'] = df['NUM_INSTALMENT_NUMBER']
 
     # days_instalment
@@ -697,7 +700,7 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     # days_credit_enddate
     df_clean['days_credit_enddate'] = df['DAYS_CREDIT_ENDDATE']
     mask_nan_range = (df['DAYS_CREDIT_ENDDATE'] >= 12000) & (df['DAYS_CREDIT_ENDDATE'] <= 31500)
-    df_clean.loc[mask_nan_range, 'DAYS_CREDIT_ENDDATE'] = np.nan
+    df_clean.loc[mask_nan_range, 'days_credit_enddate'] = np.nan
 
     # days_credit_enddate_first_cluster_values
     mask_cluster_1 = (df['DAYS_CREDIT_ENDDATE'] >= 1600) & (df['DAYS_CREDIT_ENDDATE'] < 12000)
@@ -708,8 +711,8 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
         df['DAYS_CREDIT_ENDDATE']
     )
 
-    # days_credit_enddate_is_present
-    df_clean['days_credit_enddate_is_present'] = df['DAYS_CREDIT_ENDDATE'].notnull().astype(int)
+    # days_credit_enddate_is_missing
+    df_clean['days_credit_enddate_is_missing'] = df['DAYS_CREDIT_ENDDATE'].notnull().astype(int)
 
     # days_credit_enddate_closed
     df_clean['days_credit_enddate_closed'] = (df['DAYS_CREDIT_ENDDATE'] < 0).astype(int)
@@ -729,14 +732,14 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     # days_enddate_fact
     df_clean['days_enddate_fact'] = np.where(df['DAYS_ENDDATE_FACT'] > 3000, 3000, df['DAYS_ENDDATE_FACT'])
 
-    # days_enddate_fact_is_present
-    df_clean['days_enddate_fact_is_present'] = df['DAYS_ENDDATE_FACT'].isnull().astype(int)
+    # days_enddate_fact_is_missing
+    df_clean['days_enddate_fact_is_missing'] = df['DAYS_ENDDATE_FACT'].isnull().astype(int)
 
     # amt_credit_max_overdue
     df_clean['amt_credit_max_overdue'] = clip_p999(df['AMT_CREDIT_MAX_OVERDUE'])
 
-    # amt_credit_max_overdue_is_present
-    df_clean['amt_credit_max_overdue_is_present'] = df['AMT_CREDIT_MAX_OVERDUE'].isnull().astype(int)
+    # amt_credit_max_overdue_is_missing
+    df_clean['amt_credit_max_overdue_is_missing'] = df['AMT_CREDIT_MAX_OVERDUE'].isnull().astype(int)
 
     # cnt_credit_prolong
     df_clean['cnt_credit_prolong'] = df['CNT_CREDIT_PROLONG']
@@ -746,19 +749,19 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
 
     # amt_credit_sum_debt
     is_negative_mask=df['AMT_CREDIT_SUM_DEBT'] < 0
-    df_clean["amt_credit_sum_debt_negative_balance"]= np.where(df['AMT_CREDIT_SUM_DEBT'] < 0, df['AMT_CREDIT_SUM_DEBT'] , 0)
+    df_clean["amt_credit_sum_debt_is_negative"]= np.where(df['AMT_CREDIT_SUM_DEBT'] < 0, df['AMT_CREDIT_SUM_DEBT'] , 0)
     df["AMT_CREDIT_SUM_DEBT"]= df["AMT_CREDIT_SUM_DEBT"].mask(is_negative_mask,0) 
     df_clean['amt_credit_sum_debt'] = clip_p999(df['AMT_CREDIT_SUM_DEBT'])
     
 
-    # amt_credit_sum_debt_is_present
-    df_clean['amt_credit_sum_debt_is_present'] = df['AMT_CREDIT_SUM_DEBT'].isnull().astype(int)
+    # amt_credit_sum_debt_is_missing
+    df_clean['amt_credit_sum_debt_is_missing'] = df['AMT_CREDIT_SUM_DEBT'].isnull().astype(int)
 
     # amt_credit_sum_limit
     df_clean['amt_credit_sum_limit'] = df['AMT_CREDIT_SUM_LIMIT']
 
-    # amt_credit_sum_limit_is_present
-    df_clean['amt_credit_sum_limit_is_present'] = df['AMT_CREDIT_SUM_LIMIT'].isnull().astype(int)
+    # amt_credit_sum_limit_is_missing
+    df_clean['amt_credit_sum_limit_is_missing'] = df['AMT_CREDIT_SUM_LIMIT'].isnull().astype(int)
 
     # amt_credit_sum_limit_is_zero
     df_clean['amt_credit_sum_limit_is_zero'] = (df['AMT_CREDIT_SUM_LIMIT'] == 0).astype(int)
@@ -772,8 +775,8 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     # have_amt_credit_sum_overdue
     df_clean['have_amt_credit_sum_overdue'] = (df['AMT_CREDIT_SUM_OVERDUE'] > 0).astype(int)
 
-    # have_amt_credit_sum_overdue_is_present
-    df_clean['have_amt_credit_sum_overdue_is_present'] = df['AMT_CREDIT_SUM_OVERDUE'].isnull().astype(int)
+    # have_amt_credit_sum_overdue_is_missing
+    df_clean['amt_credit_sum_overdue_is_missing'] = df['AMT_CREDIT_SUM_OVERDUE'].isnull().astype(int)
 
     # credit_type
     type_counts = df['CREDIT_TYPE'].value_counts()
@@ -786,8 +789,8 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
     # amt_annuity
     df_clean['amt_annuity'] = df['AMT_ANNUITY']
 
-    # flag_is_present_amt_annuity
-    df_clean['flag_is_present_amt_annuity'] = df['AMT_ANNUITY'].isnull().astype(int)
+    # flag_is_missing_amt_annuity
+    df_clean['amt_annuity_is_missing'] = df['AMT_ANNUITY'].isnull().astype(int)
 
 
 
