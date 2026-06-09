@@ -2,10 +2,12 @@
 from pathlib import Path
 from collections.abc import Callable
 import pandas as pd
-from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR
+from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR, RAW_DATA_DIR
+import kagglehub
 
 def download_dataset():
-    NotImplemented
+    kagglehub.login()
+    kagglehub.competition_download('home-credit-default-risk', output_dir=RAW_DATA_DIR)
 
 
 

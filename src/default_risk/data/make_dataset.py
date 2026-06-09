@@ -2,7 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from default_risk.config import CLEANS_DIR, PROCESSED_DIR, RAW_DATA_DIR, SPLITS_DIR, CANONIC_DIR
 from default_risk.data.clean import clean_bureau, clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
-from default_risk.data.extract import split_dataset, canonizate
+from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
 
 from default_risk.data.process import process_bureau, process_installments_payments
@@ -45,11 +45,14 @@ tables_list: list= list(cleaning_dict.keys())
 
 def main():
 
+    RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
     SPLITS_DIR.mkdir(parents=True, exist_ok=True)
     CLEANS_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
     
+    if not any(Path(RAW_DATA_DIR).iterdir()):
+        download_dataset()
+  
     canonizate()
 
     split_dataset(RAW_DATA_DIR,CANONIC_DIR, SPLITS_DIR)
