@@ -4,6 +4,8 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+from default_risk.config import CLEANS_DIR
+
 
 def process_bureau(input_filepath: Path, output_filepath: Path):
     print('Starting bureau table processing...')
@@ -75,8 +77,6 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
     combined_rows = pd.concat([bureau_aggregated, last_three_columns],  axis=1 )
     combined_rows.reset_index(inplace=True)
     combined_rows.to_parquet(output_filepath, index=False)
-
-
 
 def process_prev_application(input_filepath: Path, output_filepath: Path) :
     print('Starting previous_application table processing...')
@@ -156,3 +156,104 @@ def process_prev_application(input_filepath: Path, output_filepath: Path) :
     previous_application_ready_to_merge= df_wide.merge(agg_metrics_df,on="id_curr",how="left")
     previous_application_ready_to_merge.to_parquet(output_filepath, index=False)
     return
+
+def process_installments_payments(input_filepath: Path, output_filepath: Path):
+    print('Starting payment installments table processing...')
+    installments_payment_df = pd.read_parquet(input_filepath)
+    column_order_reference="days_instalment"
+    installments_payment_df.sort_values(["id_prev",column_order_reference,"days_instalment"],inplace=True)
+
+    #we starting catching this because we are probably cutting some parts of the temporal sequence
+    installments_payment_df["raw_size_serie"]= installments_payment_df.groupby("id_prev").transform("size")
+    installments_payment_df["amount_of_versions_in_sequence"] = installments_payment_df.groupby("id_prev")["num_instalment_version"].transform("nunique")
+
+    #we gonna use the knowlege recolected in the EDA. 
+    #For more details look eda_installments_payments.ipynb decisions summary 1#
+
+    #creating auxiliar columns
+    installments_payment_df["next_payment_value"] = installments_payment_df.groupby("id_prev")["days_entry_payment"].shift(-1)
+    nan_amount= installments_payment_df.groupby("id_prev")["days_entry_payment_is_missing"].transform("sum")
+
+    #defining the mask to separate the differents cases of missings values 
+    have_missing_entry_payment_mask= (installments_payment_df["next_payment_value"].isna())
+    not_a_deadtail_mask= (installments_payment_df["days_entry_payment"].isna() ) & ( installments_payment_df["next_payment_value"].notna())
+
+    #we want to catch the cases of  dead-tail so we starting filtering that cases with nans but that are not dead tails
+    non_dead_tail_nans= installments_payment_df[not_a_deadtail_mask]
+    ids_with_nulls_that_are_non_deadtails= non_dead_tail_nans["id_prev"].unique()
+    excluding_nans_non_deadtails_mask= ~(installments_payment_df["id_prev"].isin(ids_with_nulls_that_are_non_deadtails))
+    series_without_problematic_nans = installments_payment_df[excluding_nans_non_deadtails_mask]
+
+    #now this ID are series where the nans are deadtails, so count nans in "days_entry_payment" o "amt_payment" is calculate
+    #the lenght of the deadtail and we save that value in a new column
+    ids_with_deadtails= series_without_problematic_nans[series_without_problematic_nans["days_entry_payment"].isna()]["id_prev"].unique()
+    installments_payment_df["dead_tail_length"]= np.where(installments_payment_df["id_prev"].isin(ids_with_deadtails),  nan_amount, 0)
+
+    #also in the decision summary of the EDA we define a criteria to incomplete series 
+    starting_instalment_number= installments_payment_df.groupby("id_prev")["num_instalment_number"].transform("first")
+    starting_date= installments_payment_df.groupby("id_prev")["days_instalment"].transform("first")
+
+    installments_payment_df["is_potentially_incomplete_sequence"] = ((starting_instalment_number >  1)  & (starting_date < -2890 ))
+
+    potentially_on_going_id = installments_payment_df[installments_payment_df["days_instalment"] > (- 33)]["id_prev"].unique()
+    installments_payment_df["potentially_on_going"]= installments_payment_df["id_prev"].isin(potentially_on_going_id)   
+
+    installments_payment_df["diff_expected_received"]= installments_payment_df["amt_instalment"] -  installments_payment_df["amt_payment"]
+    installments_payment_df["diff_deadline_factical_payment"]= installments_payment_df["days_instalment"] -  installments_payment_df["days_entry_payment"]
+    installments_payment_df["days_of_delinquency"]= installments_payment_df["diff_deadline_factical_payment"].clip(lower=0)
+    installments_payment_df["is_delinquency"] = installments_payment_df["days_of_delinquency"] > 0 
+
+    next_installment_number = installments_payment_df.groupby("id_prev")["num_instalment_number"].shift(-1)
+    next_version_number = installments_payment_df.groupby("id_prev")["num_instalment_version"].shift(-1)
+    repeated_installment_mask= (installments_payment_df ["num_instalment_number"] == next_installment_number)
+    underpayment_mask= (installments_payment_df[ "amt_payment" ] < installments_payment_df ["amt_instalment"]) & (installments_payment_df[ "amt_payment" ] == 0)
+    full_payment_mask= installments_payment_df[ "amt_payment" ] == installments_payment_df ["amt_instalment"] 
+    installments_payment_df[ "repeated_for_underpayment" ] = (repeated_installment_mask) & (underpayment_mask)
+    installments_payment_df[ "repeated_for_reschedule" ] = (repeated_installment_mask) & (full_payment_mask)
+    installments_payment_df["repeated_for_payment_in_advance"] = (repeated_installment_mask) & (installments_payment_df[ "amt_payment" ] == 0) & (installments_payment_df["days_of_delinquency"] == 0)
+    installments_payment_df["log_amt_instalment"]= np.log1p(installments_payment_df ["amt_instalment"] )
+    installments_payment_df["log_amt_payment"]= np.log1p(installments_payment_df ["amt_payment"] )
+
+    agg_metrics_df= installments_payment_df.groupby("id_prev").agg({
+
+        #static values calculated for the entire squenece
+        "raw_size_serie" : ["first"],
+        "dead_tail_length" : ["first"],
+        "amount_of_versions_in_sequence" : ["first"],
+        "is_potentially_incomplete_sequence" : ["first"],
+        "potentially_on_going" : ["first"],
+
+        #for log transformated we want to catch the mean and the std (avoiding the impact of the heavy tail from this columns)
+        "log_amt_instalment": ["mean","std"],   
+        "log_amt_payment": ["mean","std"],
+
+        #natural scale
+        "amt_instalment": ["max", "min","median","sum"],
+        "amt_payment": ["max", "min","median","sum"],
+
+        #computed_differences
+        "diff_expected_received": ["max", "min","median","sum"],
+        "diff_deadline_factical_payment": ["max", "min","median","sum"],
+
+
+        #categoricals
+        "repeated_for_underpayment": ["mean","sum"],
+        "repeated_for_reschedule": ["mean","sum"],
+        "repeated_for_payment_in_advance": ["mean","sum"],
+        "is_delinquency" : ["mean","sum"],
+
+
+        #counters
+        "days_of_delinquency":["mean","max","sum"],
+    })
+
+    agg_metrics_df.columns = [
+        f"instalments_{col[0]}" if col[1] == "first" else f"instalments_{col[0]}_{col[1]}"
+        for col in agg_metrics_df.columns
+    ]
+
+    agg_metrics_df = agg_metrics_df.reset_index()
+
+    agg_metrics_df["instalments_completion_ratio"] = np.where( agg_metrics_df["instalments_amt_instalment_sum"] > 0, agg_metrics_df["instalments_amt_payment_sum"] / agg_metrics_df["instalments_amt_instalment_sum"], 1.0 )  #if the debt is 0 or negative we assume competitud (1)                                                               )
+    agg_metrics_df.to_parquet(output_filepath)
+

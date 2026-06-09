@@ -178,8 +178,6 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
 
-
-
 def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     print('Starting installments_payments table cleaning...')
     print(f'Loading data from: {input_filepath}')
@@ -238,7 +236,6 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
-
 
 def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     print('Starting POS_CASH_balance table cleaning...')
@@ -338,8 +335,6 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
 
-
-
 def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
 
     np.seterr(all='raise')
@@ -366,8 +361,6 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
     print(f'Cleaning finished! File saved to: {output_filepath}')
         
     return df_clean
-
-
 
 def clean_previous_application(input_filepath: Path, output_filepath: Path):
 
@@ -468,7 +461,6 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     print(f'Cleaning finished! File saved to: {output_filepath}')
         
     return df_clean
-
 
 def clean_application_train(input_filepath: Path, output_filepath: Path):
 
@@ -655,7 +647,6 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     print(f'Cleaning finished! File saved to: {output_filepath}')
         
     return df_clean_copied
-
 
 def clean_bureau(input_filepath: Path, output_filepath: Path):
     print('Starting bureau table cleaning...')
