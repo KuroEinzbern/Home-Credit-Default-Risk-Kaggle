@@ -76,9 +76,8 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
 
     combined_rows = pd.concat([bureau_aggregated, last_three_columns],  axis=1 )
     combined_rows.reset_index(inplace=True)
-    combined_rows.to_parquet(output_filepath, index=False)
+    combined_rows.add_prefix("bureau").to_parquet(output_filepath, index=False)
 
-def process_prev_application(input_filepath: Path, output_filepath: Path) :
     print('Starting previous_application table processing...')
     print(f'Loading data from: {input_filepath}')
     previous_application_df = pd.read_parquet(input_filepath)
@@ -257,3 +256,128 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
     agg_metrics_df["instalments_completion_ratio"] = np.where( agg_metrics_df["instalments_amt_instalment_sum"] > 0, agg_metrics_df["instalments_amt_payment_sum"] / agg_metrics_df["instalments_amt_instalment_sum"], 1.0 )  #if the debt is 0 or negative we assume competitud (1)                                                               )
     agg_metrics_df.to_parquet(output_filepath)
 
+def process_previous_application(input_filepath: Path, output_filepath: Path):
+    previous_application_df = pd.read_parquet(input_filepath)
+
+    #creating columns before aggregation
+    previous_application_df["diff_application_credit"] = previous_application_df["amt_application"] - previous_application_df["amt_credit"]
+    previous_application_df["ratio_credit_to_goods"] = previous_application_df["amt_credit"] / (previous_application_df["amt_goods_price"].replace(0,np.nan))
+    previous_application_df["total_interest_charged"] = (previous_application_df["amt_annuity"] * previous_application_df["cnt_payment"]) - previous_application_df["amt_credit"]
+    previous_application_df["ratio_credit_to_annuity"]= previous_application_df["amt_credit"] / (previous_application_df["amt_annuity"].replace(0,np.nan))
+
+
+    previous_application_to_pivot_df= previous_application_df.drop(columns="id_prev")
+    mask_no_final= previous_application_df["flag_last_application_for_the_contract"] == "N"
+    previous_application_to_pivot_df= previous_application_to_pivot_df.loc[~mask_no_final]
+    previous_application_to_pivot_df.sort_values(["id_curr","days_decision"],inplace=True,ascending=False)
+    last_three= previous_application_to_pivot_df.groupby("id_curr").head(3)
+
+    last_three = last_three.copy()
+    last_three["loan_order"] = last_three.groupby("id_curr").cumcount() + 1
+    df_wide = last_three.pivot(index="id_curr", columns="loan_order")
+    df_wide.columns =[f"{col}_prev_{rank}" for col, rank in df_wide.columns]
+    df_wide= df_wide.reset_index()
+
+    previous_application_df["name_contract_status"]= previous_application_df["name_contract_status"].str.lower()
+    previous_application_df= pd.get_dummies(previous_application_df, columns=["name_contract_status"])
+
+
+    #we will calculate aggregations per client for differents tables so we will separate dictionaries per table
+    agg_from_prev_app_dict= {
+
+        #saving the ammount of contract
+        "id_prev" : ["count"],
+        
+        #for log transformated we want to catch the mean and the std (avoiding the impact of the heavy tail from this columns)
+        "log_amt_credit": ["mean","std"],   
+        "log_amt_application": ["mean","std"],
+        "log_amt_down_payment": ["mean","std"],
+        "log_amt_goods_price": ["mean","std"],
+        "log_amt_annuity": ["mean","std"],
+        "log_total_interest_charged" : ["mean","std"],
+
+        #for non transformated columns we want to catch the representative values and the acumulated
+        "amt_credit": ["max", "min","median","sum"],
+        "amt_application": ["max", "min","median","sum"],
+        "amt_down_payment": ["max", "min","median","sum"],
+        "amt_goods_price": ["max", "min","median","sum"],
+        "amt_annuity": ["max", "min","median"],
+        "total_interest_charged": ["max", "min","median"],
+
+        #others_monetary
+        "diff_application_credit": ["max","mean","min","median","sum"],
+        "log_diff_application_credit": ["max","mean","min"],
+        "rate_down_payment": ["max","mean","std","min","median"],
+        "ratio_credit_to_goods" : ["max","mean","std","min","median"],
+        "ratio_credit_to_annuity" : ["max","mean","std","min","median"],
+
+        #categoricals
+        "name_contract_status_approved": ["mean","sum"],
+        "name_contract_status_canceled": ["mean","sum"],
+        "name_contract_status_refused": ["mean","sum"],
+        "amt_annuity_and_cnt_payment_are_missing" :["mean","sum"],
+        "amt_down_payment_is_missing" : ["mean","sum"],
+        "nflag_insured_on_approval" : ["mean","sum"],
+        "days_and_insurance_information_are_missing": ["mean","sum"],
+        "amt_goods_price_is_missing" : ["mean","sum"],
+        "rate_down_payment_is_missing" : ["mean","sum"],
+
+
+        #counters
+        "days_decision":["mean","min","max"],
+        "cnt_payment":["mean","min","max","sum"]
+    }
+
+    agg_from_instalment_payment_dict= {
+        "instalments_potentially_on_going" : ["sum"],
+        "instalments_is_potentially_incomplete_sequence" : ["mean","sum"],
+        "instalments_dead_tail_length" : ["mean","max"],
+        "instalments_amt_instalment_sum" : ["mean","sum","max"],
+        "instalments_amt_payment_sum" : ["mean", "sum", "max"],
+        "instalments_days_of_delinquency_max": ["max"],
+        "instalments_days_of_delinquency_mean": ["mean", "max"],
+        "instalments_is_delinquency_sum" : ["sum"] ,
+        "instalments_is_delinquency_mean" : ["mean"],
+        "instalments_repeated_for_underpayment_sum" : ["sum"],
+        "instalments_repeated_for_underpayment_mean" : ["mean"],
+        "instalments_repeated_for_reschedule_sum" : ["sum"],
+        "instalments_repeated_for_reschedule_mean" : ["mean"],
+        "instalments_diff_expected_received_sum" : ["sum"]
+    }
+
+    final_dict_for_agg= agg_from_prev_app_dict | agg_from_instalment_payment_dict
+
+    previous_application_df["log_amt_credit"] = np.log1p(previous_application_df["amt_credit"])
+    previous_application_df["log_amt_application"] = np.log1p(previous_application_df["amt_application"])
+    previous_application_df["log_amt_annuity"] = np.log1p(previous_application_df["amt_annuity"])
+    previous_application_df["log_amt_down_payment"] = np.log1p(previous_application_df["amt_down_payment"])
+    previous_application_df["log_amt_goods_price"] = np.log1p(previous_application_df["amt_goods_price"])
+    previous_application_df["log_diff_application_credit"] = previous_application_df["log_amt_application"] - previous_application_df["log_amt_credit"]
+    previous_application_df["log_total_interest_charged"] = np.log1p(previous_application_df["total_interest_charged"])
+
+
+
+    agg_metrics_df= previous_application_df.groupby("id_curr").agg(final_dict_for_agg)
+    agg_metrics_df.columns = [
+        f"{col[0]}_{col[1]}" if str(col[0]).startswith("instalments_") else f"previous_application_{col[0]}_{col[1]}" 
+        for col in agg_metrics_df.columns
+    ]
+    agg_metrics_df= agg_metrics_df.reset_index()
+
+    agg_metrics_df.rename(columns={"id_prev_count": "applications_count"},inplace=True)
+    previous_application_ready_to_merge= df_wide.merge(agg_metrics_df,on="id_curr",how="left")
+
+    cols_to_fix = [
+        "instalments_potentially_on_going_sum",
+        "instalments_is_potentially_incomplete_sequence_sum",
+        "instalments_is_potentially_incomplete_sequence_mean",
+        "instalments_is_delincuency_sum",
+        "instalments_is_delincuency_mean"
+    ]
+
+    for col in cols_to_fix:
+        if col in previous_application_ready_to_merge.columns:
+            previous_application_ready_to_merge[col] = pd.to_numeric(previous_application_ready_to_merge[col], errors='coerce')
+
+    previous_application_ready_to_merge.to_parquet(output_filepath, index=False)
+    pass
