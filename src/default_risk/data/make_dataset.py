@@ -57,14 +57,19 @@ def main():
     split_dataset(RAW_DATA_DIR,CANONIC_DIR, SPLITS_DIR)
 
     for table_name in tables_list :
+        print(f"Cleaning table {table_name}...", end='', flush=True)
         path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name,"train")
         cleaner= cleaning_dict[table_name]
         cleaner(path_bronze_layer_file,path_silver_layer_file)
+        print("Done.")
 
     for table_name in tables_list :
+        print(f"Processing aggregations of {table_name}...", end='', flush=True)
         input, output = generate_process_paths(table_name,"train")
         processer= procesing_dict[table_name]
         processer(input, output)
+        print("Done.")
+
 
         
 if __name__ == "__main__":

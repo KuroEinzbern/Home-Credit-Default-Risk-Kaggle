@@ -8,8 +8,6 @@ from default_risk.config import CLEANS_DIR, PROCESSED_DIR
 
 
 def process_bureau(input_filepath: Path, output_filepath: Path):
-    print('Starting bureau table processing...')
-    print(f'Loading data from: {input_filepath}')
     bureau_df = pd.read_parquet(input_filepath)
 
     bureau_df.sort_values(["id_curr", "days_credit"],inplace=True,ascending=False)
@@ -79,7 +77,6 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
     combined_rows.add_prefix("bureau").to_parquet(output_filepath, index=False)
 
 def process_installments_payments(input_filepath: Path, output_filepath: Path):
-    print('Starting payment installments table processing...')
     installments_payment_df = pd.read_parquet(input_filepath)
     column_order_reference="days_instalment"
     installments_payment_df.sort_values(["id_prev",column_order_reference,"days_instalment"],inplace=True)
@@ -179,7 +176,6 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
     agg_metrics_df.to_parquet(output_filepath)
 
 def process_previous_application(input_filepath: Path, output_filepath: Path):
-    print('Starting previous application table processing...')
     previous_application_df = pd.read_parquet(input_filepath)
 
     #creating columns before aggregation

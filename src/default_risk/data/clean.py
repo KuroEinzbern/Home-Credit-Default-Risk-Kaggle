@@ -25,9 +25,6 @@ def agroup_ultra_rare_categories(col : pd.Series, umbral_of_observations : int):
     return agrouped_col.astype("category")
    
 def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
-
-    print('Starting credit_card_balance table cleaning...')
-    print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
     df = pd.read_parquet(input_filepath)
@@ -176,11 +173,8 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean["incomplete_sequence"] =  (~have_at_least_one_status_closed) & (~have_recent_balance)
     
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
 
 def clean_installments_payments(input_filepath: Path, output_filepath: Path):
-    print('Starting installments_payments table cleaning...')
-    print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
     df = pd.read_parquet(input_filepath)
@@ -235,11 +229,8 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     df_clean['amt_payment'] = clip_p999(df['AMT_PAYMENT'])
 
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
 
 def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
-    print('Starting POS_CASH_balance table cleaning...')
-    print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
     df = pd.read_parquet(input_filepath)
@@ -331,12 +322,9 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     dpd_def_is_constant = dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('max') == dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('min')
 
     df_clean['flag_delay_tail'] = (potential_delay_tail & dpd_is_constant & dpd_def_is_constant).astype(int)
-
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
 
 def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
-
     np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
@@ -358,12 +346,8 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
     df_clean["incomplete_sequence"] =  (~have_at_least_one_status_closed) & (~have_recent_balance)
 
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
-        
-    return df_clean
 
 def clean_previous_application(input_filepath: Path, output_filepath: Path):
-
     np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
@@ -458,12 +442,8 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean["days_and_insurance_information_are_missing"] = df["DAYS_FIRST_DRAWING"].isna().astype(int)
 
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
-        
-    return df_clean
 
 def clean_application_train(input_filepath: Path, output_filepath: Path):
-
     np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = {}
@@ -644,13 +624,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
 
     df_clean_copied = pd.DataFrame(df_clean)
     df_clean_copied.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
-        
-    return df_clean_copied
 
 def clean_bureau(input_filepath: Path, output_filepath: Path):
-    print('Starting bureau table cleaning...')
-    print(f'Loading data from: {input_filepath}')
     np.seterr(all='raise')
 
     df = pd.read_parquet(input_filepath)
@@ -785,4 +760,3 @@ def clean_bureau(input_filepath: Path, output_filepath: Path):
 
 
     df_clean.to_parquet(output_filepath, index=False)
-    print(f'Cleaning finished! File saved to: {output_filepath}')
