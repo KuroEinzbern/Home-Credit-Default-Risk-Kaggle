@@ -5,9 +5,7 @@ from default_risk.data.clean import clean_bureau, clean_credit_card_balance, cle
 from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
 
-from default_risk.data.process import process_bureau, process_installments_payments
-from default_risk.data.process import process_prev_application
-
+from default_risk.data.process import process_bureau, process_installments_payments, process_previous_application
 canonizated_tables: dict ={}
 
 def generate_cleaner_paths(table_name: str, split: str):
@@ -21,23 +19,24 @@ def generate_process_paths(table_name: str, split: str):
     return p_in, p_out
 
 cleaning_dict: dict[str, Callable] = {
-        "application_train" : clean_application_train,
-        "previous_application" : clean_previous_application,
-        "credit_card_balance" : clean_credit_card_balance,
-        "installments_payments" : clean_installments_payments,
-        "POS_CASH_balance" : clean_pos_cash_balance,
         "bureau_balance" : clean_bureau_balance,
-        "bureau": clean_bureau
+        "bureau": clean_bureau,
+        "installments_payments" : clean_installments_payments,
+        "credit_card_balance" : clean_credit_card_balance,
+        "POS_CASH_balance" : clean_pos_cash_balance,
+        "previous_application" : clean_previous_application,
+        "application_train" : clean_application_train,
 }
 
 procesing_dict: dict[str, Callable] = {
-        "application_train" : lambda *args: None,
-        "previous_application" : process_prev_application,
-        "credit_card_balance" : lambda *args: None,
-        "installments_payments" : process_installments_payments,
-        "POS_CASH_balance" : lambda *args: None,
         "bureau_balance" : lambda *args: None,
-        "bureau": process_bureau
+        "bureau": process_bureau,
+        "installments_payments" : process_installments_payments,
+        "credit_card_balance" : lambda *args: None,
+        "POS_CASH_balance" : lambda *args: None,
+        "previous_application" : process_previous_application,
+        "application_train" : lambda *args: None,
+
 }
 
 tables_list: list= list(cleaning_dict.keys())
