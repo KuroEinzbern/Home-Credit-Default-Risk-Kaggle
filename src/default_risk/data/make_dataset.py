@@ -29,17 +29,14 @@ cleaning_dict: dict[str, Callable] = {
 }
 
 procesing_dict: dict[str, Callable] = {
-        "bureau_balance" : lambda *args: None,
         "bureau": process_bureau,
         "installments_payments" : process_installments_payments,
-        "credit_card_balance" : lambda *args: None,
-        "POS_CASH_balance" : lambda *args: None,
         "previous_application" : process_previous_application,
-        "application_train" : lambda *args: None,
 
 }
 
-tables_list: list= list(cleaning_dict.keys())
+cleaning_tables_list: list= list(cleaning_dict.keys())
+procesing_tables_list: list= list(procesing_dict.keys())
 
 
 def main():
@@ -56,14 +53,14 @@ def main():
 
     split_dataset(RAW_DATA_DIR,CANONIC_DIR, SPLITS_DIR)
 
-    for table_name in tables_list :
+    for table_name in cleaning_tables_list :
         print(f"Cleaning table {table_name}...", end='', flush=True)
         path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name,"train")
         cleaner= cleaning_dict[table_name]
         cleaner(path_bronze_layer_file,path_silver_layer_file)
         print("Done.")
 
-    for table_name in tables_list :
+    for table_name in procesing_tables_list :
         print(f"Processing aggregations of {table_name}...", end='', flush=True)
         input, output = generate_process_paths(table_name,"train")
         processer= procesing_dict[table_name]
