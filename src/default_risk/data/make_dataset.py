@@ -1,13 +1,11 @@
 from pathlib import Path
 from types import SimpleNamespace
-from default_risk.config import CLEANS_DIR, PROCESSED_DIR, RAW_DATA_DIR, SPLITS_DIR, CANONIC_DIR
+from default_risk.config import CLEANS_DIR, DATA_DIR, PROCESSED_DIR, RAW_DATA_DIR, SPLITS_DIR, CANONIC_DIR
 from default_risk.data.clean import clean_bureau, clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
-from default_risk.data.extract import split_dataset, canonizate
+from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
 
-from default_risk.data.process import process_bureau
-from default_risk.data.process import process_prev_application
-
+from default_risk.data.process import process_bureau, process_installments_payments, process_previous_application
 canonizated_tables: dict ={}
 
 def generate_cleaner_paths(table_name: str, split: str):
@@ -21,48 +19,54 @@ def generate_process_paths(table_name: str, split: str):
     return p_in, p_out
 
 cleaning_dict: dict[str, Callable] = {
-        "application_train" : clean_application_train,
-        "previous_application" : clean_previous_application,
-        "credit_card_balance" : clean_credit_card_balance,
-        "installments_payments" : clean_installments_payments,
-        "POS_CASH_balance" : clean_pos_cash_balance,
         "bureau_balance" : clean_bureau_balance,
-        "bureau": clean_bureau
+        "bureau": clean_bureau,
+        "installments_payments" : clean_installments_payments,
+        "credit_card_balance" : clean_credit_card_balance,
+        "POS_CASH_balance" : clean_pos_cash_balance,
+        "previous_application" : clean_previous_application,
+        "application_train" : clean_application_train,
 }
 
 procesing_dict: dict[str, Callable] = {
-        "application_train" : lambda *args: None,
-        "previous_application" : process_prev_application,
-        "credit_card_balance" : lambda *args: None,
-        "installments_payments" : lambda *args: None,
-        "POS_CASH_balance" : lambda *args: None,
-        "bureau_balance" : lambda *args: None,
-        "bureau": process_bureau
+        "bureau": process_bureau,
+        "installments_payments" : process_installments_payments,
+        "previous_application" : process_previous_application,
+
 }
 
-tables_list: list= list(cleaning_dict.keys())
+cleaning_tables_list: list= list(cleaning_dict.keys())
+procesing_tables_list: list= list(procesing_dict.keys())
 
 
 def main():
-
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
     SPLITS_DIR.mkdir(parents=True, exist_ok=True)
     CLEANS_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
     
+    if not any(Path(RAW_DATA_DIR).iterdir()):
+        download_dataset()
+  
     canonizate()
 
     split_dataset(RAW_DATA_DIR,CANONIC_DIR, SPLITS_DIR)
 
-    for table_name in tables_list :
+    for table_name in cleaning_tables_list :
+        print(f"Cleaning table {table_name}...", end='', flush=True)
         path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name,"train")
         cleaner= cleaning_dict[table_name]
         cleaner(path_bronze_layer_file,path_silver_layer_file)
+        print("Done.")
 
-    for table_name in tables_list :
+    for table_name in procesing_tables_list :
+        print(f"Processing aggregations of {table_name}...", end='', flush=True)
         input, output = generate_process_paths(table_name,"train")
         processer= procesing_dict[table_name]
         processer(input, output)
+        print("Done.")
+
 
         
 if __name__ == "__main__":

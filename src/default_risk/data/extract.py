@@ -2,10 +2,12 @@
 from pathlib import Path
 from collections.abc import Callable
 import pandas as pd
-from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR
+from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR, RAW_DATA_DIR
+import kagglehub
 
 def download_dataset():
-    NotImplemented
+    kagglehub.login()
+    kagglehub.competition_download('home-credit-default-risk', output_dir=RAW_DATA_DIR)
 
 
 
@@ -19,6 +21,48 @@ all_tables_name = [
         "credit_card_balance",
         "bureau_balance"
     ]   
+
+
+def split_table(table_path: Path, train_ids: set, test_ids: set, output_dir: Path):
+
+    train_out_path = output_dir / f"{table_path.stem}.train.parquet"
+    test_out_path = output_dir / f"{table_path.stem}.test.parquet"
+
+    if train_out_path.exists() and test_out_path.exists():
+            return
+    
+    print(f"Creating splits for {table_path.name}...", end='', flush=True)
+    df = pd.read_csv(table_path)
+
+    df_train = df[df['SK_ID_CURR'].isin(train_ids)]
+    df_test = df[df['SK_ID_CURR'].isin(test_ids)]
+    
+    df_train.to_parquet(train_out_path, index=False)
+
+    if len(df_test) > 0:
+        df_test.to_parquet(test_out_path, index=False)
+    
+    print("Done.")
+
+
+def split_dataset(dataset_path: Path, canonic_path: Path, output_path: Path):
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    df_app_train = pd.read_csv(dataset_path / "application_train.csv", usecols=["SK_ID_CURR"])
+    df_app_test = pd.read_csv(dataset_path / "application_test.csv", usecols=["SK_ID_CURR"])
+    train_ids = set(df_app_train["SK_ID_CURR"])
+    test_ids = set(df_app_test["SK_ID_CURR"])
+
+
+    for table_name in all_tables_name:
+        if(table_name in canonization_dict) :
+            file_path = (canonic_path / table_name).with_suffix(".csv")  
+        else :
+            file_path= (dataset_path / table_name).with_suffix(".csv")
+        split_table(file_path, train_ids, test_ids, output_path)
+
+
+
 
 
 def canonizate_bureau_balance():
@@ -47,52 +91,8 @@ canonization_dict: dict[str, Callable] = {
         "bureau_balance" : canonizate_bureau_balance
 }
 
-
-def split_table(table_path: Path, train_ids: set, test_ids: set, output_dir: Path):
-
-    train_out_path = output_dir / f"{table_path.stem}.train.parquet"
-    test_out_path = output_dir / f"{table_path.stem}.test.parquet"
-
-    if train_out_path.exists() and test_out_path.exists():
-            print(f"{table_path.name} already processed, skipped")
-            return
-    
-    print(f"Procesing: {table_path.name}...")
-    print(table_path)
-    df = pd.read_csv(table_path)
-
-    df_train = df[df['SK_ID_CURR'].isin(train_ids)]
-    df_test = df[df['SK_ID_CURR'].isin(test_ids)]
-    
-    df_train.to_parquet(train_out_path, index=False)
-
-    if len(df_test) > 0:
-        df_test.to_parquet(test_out_path, index=False)
-    
-    print(f"{table_path.name} splitted in train and test files")
-
-def split_dataset(dataset_path: Path, canonic_path: Path, output_path: Path):
-
-    output_path.mkdir(parents=True, exist_ok=True)
-    df_app_train = pd.read_csv(dataset_path / "application_train.csv", usecols=["SK_ID_CURR"])
-    df_app_test = pd.read_csv(dataset_path / "application_test.csv", usecols=["SK_ID_CURR"])
-    train_ids = set(df_app_train["SK_ID_CURR"])
-    test_ids = set(df_app_test["SK_ID_CURR"])
-
-
-    for table_name in all_tables_name:
-        if(table_name in canonization_dict) :
-            file_path = (canonic_path / table_name).with_suffix(".csv")  
-        else :
-            file_path= (dataset_path / table_name).with_suffix(".csv")
-        split_table(file_path, train_ids, test_ids, output_path)
-
-
-
 def canonizate():
     for a_table_in_dict,function_to_canonizate in canonization_dict.items():
-        print("--applying preprocessing to " + a_table_in_dict + "-----\n")
+        print("--applying preprocessing to " + a_table_in_dict + "-----")
         function_to_canonizate()
     return
-
-
