@@ -11,7 +11,7 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
     bureau_df = pd.read_parquet(input_filepath)
 
     bureau_df.sort_values(["id_curr", "days_credit"],inplace=True,ascending=False)
-    last_three = bureau_df.groupby("id_curr").head(3)
+    last_three = bureau_df.groupby("id_curr").head(1)
     last_three = last_three.copy()
     last_three["loan_order"] = last_three.groupby("id_curr").cumcount() + 1
     last_three_columns = last_three.pivot(index="id_curr", columns="loan_order")

@@ -360,7 +360,7 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
     df_clean["closing_month"] = (df["MONTHS_BALANCE"].where(is_closed).groupby(df["SK_ID_BUREAU"]).transform("min"))
     df_clean["non_closed_loan"] = (~have_at_least_one_status_closed)
     df_clean["potential_on_going_loan"] = (~have_at_least_one_status_closed) & (have_recent_balance)
-    df_clean["incomplete_sequence"] =  (~have_at_least_one_status_closed) & (~have_recent_balance)
+    df_clean["incomplete_sequence"] = (~have_at_least_one_status_closed) & (~have_recent_balance)
 
     df_clean.to_parquet(output_filepath, index=False)
     print(f'Cleaning finished! File saved to: {output_filepath}')
