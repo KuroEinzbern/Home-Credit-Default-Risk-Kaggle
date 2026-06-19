@@ -12,3 +12,4 @@ statsmodels
 mlflow>=2.11.0,<3.0.0
 python-dotenv
 kagglehub
+borutashap
