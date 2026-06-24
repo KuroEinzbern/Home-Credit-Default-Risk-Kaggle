@@ -195,9 +195,14 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     # id_prev
     df_clean['id_prev'] = df['SK_ID_PREV']
 
+
     # id_curr
     # Passthrough, Identifier, No nulls
     df_clean['id_curr'] = df['SK_ID_CURR']
+
+    
+    df_clean['days_decision'] = df['DAYS_DECISION']
+
 
     # num_instalment_version
     df_clean['num_instalment_version'] = clip_p99_x4_and_fill(df['NUM_INSTALMENT_VERSION'], fill_nulls=False)
@@ -331,6 +336,7 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
 
     df.sort_values(['SK_ID_BUREAU', 'MONTHS_BALANCE'],inplace=True)
     df_clean["id_bureau"]= df["SK_ID_BUREAU"]
+    df_clean["id_curr"]= df["SK_ID_CURR"]
     df_clean["months_balance"]= df["MONTHS_BALANCE"]
     df_clean["status"]= df["STATUS"]
 

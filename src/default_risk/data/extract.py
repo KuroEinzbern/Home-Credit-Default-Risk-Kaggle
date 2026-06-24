@@ -2,7 +2,7 @@
 from pathlib import Path
 from collections.abc import Callable
 import pandas as pd
-from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR, RAW_DATA_DIR
+from default_risk.config import BUREAU, BUREAU_BALANCE, CANONIC_DIR, RAW_DATA_DIR, INSTALLMENTS_PAYMENTS, PREVIOUS_APPLICATION
 import kagglehub
 
 def download_dataset():
@@ -56,8 +56,10 @@ def split_dataset(dataset_path: Path, canonic_path: Path, output_path: Path):
 
     for table_name in all_tables_name:
         if(table_name in canonization_dict) :
+            print(f"se toma {table_name} de directorio canonico") 
             file_path = (canonic_path / table_name).with_suffix(".csv")  
         else :
+            print(f"se toma {table_name} del directorio raw") 
             file_path= (dataset_path / table_name).with_suffix(".csv")
         split_table(file_path, train_ids, test_ids, output_path)
 
@@ -85,10 +87,20 @@ def canonizate_bureau_balance():
     merged.to_csv(CANONIC_DIR / "bureau_balance.csv",index=False)
     return
 
-
+def canonizate_installments_payments():
+    installments_df= pd.read_csv(INSTALLMENTS_PAYMENTS)
+    previous_df= pd.read_csv(PREVIOUS_APPLICATION)
+    to_merge=previous_df[["SK_ID_PREV","DAYS_DECISION"]]
+    merged= installments_df.merge(to_merge,on="SK_ID_PREV",how="left")
+    merged= merged.astype({
+    "SK_ID_PREV": "uint32"
+    })
+    merged.to_csv(CANONIC_DIR / "installments_payments.csv",index=False)
+    return
 
 canonization_dict: dict[str, Callable] = {
-        "bureau_balance" : canonizate_bureau_balance
+        "bureau_balance" : canonizate_bureau_balance,
+        "installments_payments" : canonizate_installments_payments
 }
 
 def canonizate():

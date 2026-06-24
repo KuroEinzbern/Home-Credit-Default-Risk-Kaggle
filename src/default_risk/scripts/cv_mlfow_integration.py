@@ -46,7 +46,7 @@ def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[s
 
                 #feature_importance per fold
                 if(persist_feature_importance):
-                    save_feature_importance(model,x_train)
+                    save_feature_importance(model,x_train,run_name)
 
                 #feature_permutation per fold
                 if enable_feature_permutation:
@@ -80,7 +80,7 @@ def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[s
             predict_input_sample= final_model.predict(input_sample)
             signature= infer_signature(input_sample,predict_input_sample)
             mlflow.sklearn.log_model(final_model, "final_model",signature=signature)
-            save_feature_importance(final_model,X)
+            save_feature_importance(final_model,X,run_name)
     
     return
 
@@ -94,20 +94,20 @@ def persist_and_export_feature_permutation(pfi_folds_list: list, run_name : str)
     mlflow.log_artifact(cfg.ARTIFACTS_DIR / f"pfi_cv_results_{run_name}.csv")
     return
 
-def persist_and_export_feature_importance(feature_importance_df: pd.DataFrame)-> None:
-    file_path= str(ARTIFACTS_DIR / "feature_importance.csv")
+def persist_and_export_feature_importance(feature_importance_df: pd.DataFrame, run_name: str)-> None:
+    file_path= str(ARTIFACTS_DIR / f"{run_name}_feature_importance.csv")
     with open(file_path, "w", encoding="utf-8") as f:
         feature_importance_df.to_csv(f,index=False)
     mlflow.log_artifact(file_path)
     return
 
 
-def save_feature_importance(trained_model, X: pd.DataFrame) -> None:
+def save_feature_importance(trained_model, X: pd.DataFrame, run_name: str) -> None:
     df_feature_importance=pd.DataFrame()
     features_names= X.columns
     importances= trained_model.feature_importances_
     df_feature_importance["feature_name"] = features_names
     df_feature_importance["importances"] = importances
     df_feature_importance.sort_values(by="importances",ascending=True,inplace=True)
-    persist_and_export_feature_importance(df_feature_importance)
+    persist_and_export_feature_importance(df_feature_importance,run_name)
     return
