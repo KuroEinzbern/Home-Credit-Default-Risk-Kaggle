@@ -12,10 +12,11 @@ from default_risk.config import ARTIFACTS_DIR
 from functools import reduce
 from sklearn.inspection import permutation_importance
 import default_risk.config as cfg
+import logging
 
+logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,) -> None:
-
     mlflow.set_experiment(experiment_name)
     mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=True)
     parent_name= "Parent_" + run_name
@@ -37,12 +38,13 @@ def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[s
             name_of_nested_run= f"{run_name}_child_{fold:d}"
 
             with mlflow.start_run(run_name= name_of_nested_run, nested=True) :
-                model.fit(x_train,y_train,eval_set =[(x_val,y_val)])
+                model.fit(x_train,y_train,eval_set =[(x_val,y_val)], verbose=False)
                 predictions= model.predict_proba(x_val)
                 default_prob= predictions[:,1]
                 oof_auc_prob[val_index] = default_prob
                 score= roc_auc_score(y_val,default_prob)
                 list_scores.append(score)
+                
 
                 #feature_importance per fold
                 if(persist_feature_importance):
@@ -68,11 +70,7 @@ def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[s
             persist_and_export_feature_permutation(pfi_folds_list,run_name)
 
 
-        print("=================================================================================")
-        print(f"result of CV with {fold:d} folds")
-        print(f"mean AUC per fold= {mean_auc:.3f} ± {standar_deviation:.3f}(std)")
-        print(f"auc_score_OOF= {oof_auc_score:.3f}")
-        print("=================================================================================")
+        print(f"AUC per fold= {mean_auc:.3f} ± {standar_deviation:.3f}(std), auc_score_OOF= {oof_auc_score:.3f} result of CV with {fold:d} folds. ")
         if(save_final_model) :
             final_model=model_class(**model_params)
             final_model.fit(X,Y)
@@ -82,7 +80,7 @@ def run_cv_tracked_mlflow(model_class: type[BaseEstimator], model_params: dict[s
             mlflow.sklearn.log_model(final_model, "final_model",signature=signature)
             save_feature_importance(final_model,X,run_name)
     
-    return
+    return oof_auc_score, standar_deviation
 
 def persist_and_export_feature_permutation(pfi_folds_list: list, run_name : str)-> None:
 
