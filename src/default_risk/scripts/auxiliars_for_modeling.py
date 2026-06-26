@@ -26,7 +26,8 @@ def get_baseline_setup() -> tuple[StratifiedKFold, dict[str, Any]] :
         "objective" : 'binary:logistic',
         "random_state" : 42,
         "eval_metric" :"auc",
-        "enable_categorical" : True
+        "enable_categorical" : True,
+        "min_child_weight" : 30
     }
     return cv,hiperparams
 
