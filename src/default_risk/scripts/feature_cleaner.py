@@ -14,7 +14,7 @@ def clean_importance_zero_and_negative_pfi( feature_importance_from_pfi: pd.Data
     return X.drop(columns=features_names)
 
 def clean_noise_from_feature_importance(feature_importance: pd.DataFrame, X: pd.DataFrame, minimun_importance : float = 0) -> pd.DataFrame :
-    features_to_drop= feature_importance [(feature_importance["importances"] < minimun_importance) ] #& (feature_importance["importances"] > 0)
+    features_to_drop= feature_importance [(feature_importance["importances"] <= minimun_importance) ] #& (feature_importance["importances"] > 0)
     
     features_names= features_to_drop["feature_name"].tolist() 
     print(f"eliminando {features_names} por importancia debajo del umbral {minimun_importance}")

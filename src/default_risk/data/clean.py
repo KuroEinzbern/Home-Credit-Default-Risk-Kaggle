@@ -43,7 +43,7 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean['have_negative_balance'] = (df['AMT_BALANCE'] < 0).astype(int)
     
     # amt_positive_balance
-    df_clean['amt_positive_balance'] = df['AMT_BALANCE'].clip(lower=0)
+    df_clean['amt_balance'] = df['AMT_BALANCE'].clip(lower=0)
 
     # amt_negative_balance
     df_clean['amt_negative_balance'] = df['AMT_BALANCE'].clip(upper=0).abs()
@@ -55,14 +55,14 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     # amt_credit_limit_actual
     df_clean['amt_credit_limit_actual'] = df['AMT_CREDIT_LIMIT_ACTUAL']
 
-    # amt_drawings_current
-    amt_drawings_curr = df['AMT_DRAWINGS_CURRENT'].copy()
-    amt_drawings_curr.loc[amt_drawings_curr < 0] = amt_drawings_curr.median()
-    df_clean['amt_drawings_current'] = amt_drawings_curr
+    #amt_drawings_current
+    df_clean['amt_drawings_current'] = df['AMT_DRAWINGS_CURRENT'].copy()
+    #amt_drawings_curr.loc[amt_drawings_curr < 0] = amt_drawings_curr.median()
+    #df_clean['amt_drawings_current'] = amt_drawings_curr
 
-    # amt_drawings_amt_current
+    # amt_drawings_atm_current
     df['AMT_DRAWINGS_ATM_CURRENT'] = df['AMT_DRAWINGS_ATM_CURRENT'].fillna(0)
-    df_clean['amt_drawings_amt_current'] = clip_p999(df['AMT_DRAWINGS_ATM_CURRENT'], set_negatives_to_nan=True)
+    df_clean['amt_drawings_atm_current'] = clip_p999(df['AMT_DRAWINGS_ATM_CURRENT'], set_negatives_to_nan=True)
     
     # amt_drawings_other_current
     df['AMT_DRAWINGS_OTHER_CURRENT'] = df['AMT_DRAWINGS_OTHER_CURRENT'].fillna(0)
@@ -113,15 +113,13 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean['amt_recivable'] = s_recivable_clipped
 
     # amt_recivable_positive_balance
-    df_clean['amt_recivable_positive_balance'] = np.where(df['AMT_RECIVABLE'] < 0, df['AMT_RECIVABLE'] * -1, 0)
+    df_clean['amt_recivable'] = np.where(df['AMT_RECIVABLE'] < 0, df['AMT_RECIVABLE'] * -1, 0)
     
-    #amt_total_recivable_positive_balance
-
     # cnt_drawings_current
     df_clean['cnt_drawings_current'] = clip_p99_x4_and_fill(df['CNT_DRAWINGS_CURRENT'], fill_nulls=False)
     
     # cnt_drawings_amt_current
-    df_clean['cnt_drawings_amt_current'] = clip_p99_x4_and_fill(df['CNT_DRAWINGS_ATM_CURRENT'], fill_nulls=True)
+    df_clean['cnt_drawings_atm_current'] = clip_p99_x4_and_fill(df['CNT_DRAWINGS_ATM_CURRENT'], fill_nulls=True)
 
     # cnt_drawings_other_current
     df_clean['cnt_drawings_other_current'] = clip_p99_x4_and_fill(df['CNT_DRAWINGS_OTHER_CURRENT'], fill_nulls=True)
@@ -327,6 +325,15 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     dpd_def_is_constant = dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('max') == dpd_def_in_tail.groupby(df['SK_ID_PREV']).transform('min')
 
     df_clean['flag_delay_tail'] = (potential_delay_tail & dpd_is_constant & dpd_def_is_constant).astype(int)
+
+    have_compelted_status = df_clean["name_contract_status"].eq("Completed").groupby(df_clean["id_prev"]).transform("any")
+
+    have_recent_records = df_clean["months_balance"].gt(4).groupby(df_clean["id_prev"]).transform("any")
+
+    df_clean["potentaily_on_going"]= (~have_compelted_status) & (have_recent_records)
+
+    df_clean["incomplete_sequence"]= (~have_compelted_status) & (~have_recent_records)
+
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
