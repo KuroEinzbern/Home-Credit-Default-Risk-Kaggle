@@ -358,6 +358,7 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
     previous_application_df["log_amt_down_payment"] = np.log1p(previous_application_df["amt_down_payment"])
     previous_application_df["log_amt_goods_price"] = np.log1p(previous_application_df["amt_goods_price"])
     previous_application_df["log_diff_application_credit"] = previous_application_df["log_amt_application"] - previous_application_df["log_amt_credit"]
+    previous_application_df["total_interest_charged"] = np.clip(previous_application_df["total_interest_charged"], a_min=0, a_max=None)
     previous_application_df["log_total_interest_charged"] = np.log1p(previous_application_df["total_interest_charged"])
 
     agg_metrics_df= previous_application_df.groupby("id_curr").agg(final_dict_for_agg)
