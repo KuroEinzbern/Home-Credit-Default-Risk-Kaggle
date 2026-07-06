@@ -6,9 +6,9 @@ from functools import reduce
 from sklearn.inspection import permutation_importance
 
 
-def clean_importance_zero_and_negative_pfi( feature_importance_from_pfi: pd.DataFrame, X: pd.DataFrame) -> pd.DataFrame :
+def clean_importance_zero_and_negative_pfi( feature_importance_from_pfi: pd.DataFrame, X: pd.DataFrame, minimun_importance : float = 0) -> pd.DataFrame :
     feature_importance_from_pfi= feature_importance_from_pfi.sort_values("mean_importance_cv")
-    features_to_drop= feature_importance_from_pfi [feature_importance_from_pfi["mean_importance_cv"] <= 0.0005] 
+    features_to_drop= feature_importance_from_pfi [feature_importance_from_pfi["mean_importance_cv"] <= minimun_importance] 
     features_names= features_to_drop["feature"].tolist() 
     print(f"eliminando {features_names} por importancia 0 o negativa en feature permutation")
     return X.drop(columns=features_names)

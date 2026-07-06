@@ -28,7 +28,8 @@ def get_baseline_setup() -> tuple[StratifiedKFold, dict[str, Any]] :
         "eval_metric" :"auc",
         "enable_categorical" : True,
         "min_child_weight" : 30,
-        "n_jobs": -1
+        "n_jobs": -1,
+        "colsample_bytree" : 0.8
     }
     return cv,hiperparams
 
