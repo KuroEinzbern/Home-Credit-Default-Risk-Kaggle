@@ -5,7 +5,7 @@ from default_risk.data.clean import clean_bureau, clean_credit_card_balance, cle
 from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
 
-from default_risk.data.process import process_bureau, process_installments_payments, process_previous_application
+from default_risk.data.process import process_application_train, process_bureau, process_bureau_balance, process_credit_card_balance, process_installments_payments, process_pos_cash_balance, process_previous_application
 canonizated_tables: dict ={}
 
 def generate_cleaner_paths(table_name: str, split: str):
@@ -29,9 +29,13 @@ cleaning_dict: dict[str, Callable] = {
 }
 
 procesing_dict: dict[str, Callable] = {
+        "bureau_balance": process_bureau_balance,
         "bureau": process_bureau,
         "installments_payments" : process_installments_payments,
+        "credit_card_balance": process_credit_card_balance,
+        "POS_CASH_balance": process_pos_cash_balance,
         "previous_application" : process_previous_application,
+        "application_train": process_application_train
 
 }
 

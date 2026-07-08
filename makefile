@@ -3,8 +3,11 @@
 data:
 	python src/default_risk/data/make_dataset.py
 
-features: data
+features:
 	python src/default_risk/features/build_features.py
 
-all: features
+train:
+	python src/default_risk/models/train_model.py
+
+model: data features train
 	echo "Pipeline completo ejecutado"
