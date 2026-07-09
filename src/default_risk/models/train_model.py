@@ -19,8 +19,9 @@ def main():
     cv,hiperparams = get_baseline_setup()
     dataset = pd.read_parquet(cfg.MASTER_DATA_DIR / 'prepared_dataset.parquet')
     X,Y = prepare_columns(dataset)
-
     X = cast_object_into_categoricals(X)
+
+    hiperparams["colsample_bytree"] = 1
     run_cv_tracked_mlflow(xgb.XGBClassifier,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
 
 if __name__ == "__main__": main()
