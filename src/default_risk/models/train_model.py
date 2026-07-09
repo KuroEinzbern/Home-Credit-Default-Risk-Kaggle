@@ -2,29 +2,15 @@
 import pandas as pd
 import gc
 import xgboost as xgb
-from pandas.api.types import ( is_numeric_dtype, is_categorical_dtype, is_object_dtype, is_datetime64_any_dtype )
 from default_risk.scripts.cv_mlfow_integration import run_cv_tracked_mlflow
-from sklearn.model_selection import RepeatedKFold
 import default_risk.config as cfg
 import os
 import xgboost as xgb
-import numpy as np
 from dotenv import load_dotenv
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.metrics import roc_auc_score
 
-import dtale
-import mlflow
-import mlflow.xgboost
-import default_risk.config
 from default_risk.scripts.auxiliars_for_modeling import cast_object_into_categoricals
 from default_risk.scripts.auxiliars_for_modeling import get_baseline_setup
 from default_risk.scripts.auxiliars_for_modeling import prepare_columns
-from default_risk.scripts.feature_cleaner import clean_importance_zero_and_negative_pfi
-from default_risk.scripts.feature_cleaner import clean_noise_from_feature_importance
-from default_risk.scripts.feature_cleaner import creating_criteria
-
 
 
 def main():
@@ -32,8 +18,8 @@ def main():
     experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "default_experiment")
     cv,hiperparams = get_baseline_setup()
     #app_train_with_feature_engineering + prev_app + bureau + installments
-    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / "application_train_with_kui.parquet")
-    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / "bureau_parent.parquet")
+    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / "application_train.train-processed.parquet")
+    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / "bureau.train-processed.parquet")
 
     merged_df = application_train_df.merge(
         bureau_df, 
@@ -41,13 +27,11 @@ def main():
         how="left"
     )
 
-
-
     #cleaning the first 2 df before load the third one to avoid RAM bottleneck
     del application_train_df , bureau_df
     gc.collect()
 
-    previous_application_df=  pd.read_parquet(cfg.PROCESSED_DIR / "internal_parent.parquet")
+    previous_application_df=  pd.read_parquet(cfg.PROCESSED_DIR / "previous_application.train-processed.parquet")
 
 
     merged_df = merged_df.merge(

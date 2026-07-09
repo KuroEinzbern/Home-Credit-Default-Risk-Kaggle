@@ -25,8 +25,6 @@ def agroup_ultra_rare_categories(col : pd.Series, umbral_of_observations : int):
     return agrouped_col.astype("category")
    
 def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
-
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -173,8 +171,6 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_installments_payments(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
-
     df = pd.read_parquet(input_filepath)
 
     df.sort_values(["SK_ID_PREV","DAYS_INSTALMENT"],inplace=True)
@@ -234,8 +230,6 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
-
     df = pd.read_parquet(input_filepath)
     
     df = df.sort_values(by=['SK_ID_PREV', 'MONTHS_BALANCE'], ascending=[True, True])
@@ -337,7 +331,6 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -361,7 +354,6 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_previous_application(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -457,7 +449,6 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
     df_clean.to_parquet(output_filepath, index=False)
 
 def clean_application_train(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
     df = pd.read_parquet(input_filepath)
     df_clean = {}
 
@@ -639,8 +630,6 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     df_clean_copied.to_parquet(output_filepath, index=False)
 
 def clean_bureau(input_filepath: Path, output_filepath: Path):
-    np.seterr(all='raise')
-
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 

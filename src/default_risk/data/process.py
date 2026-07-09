@@ -8,6 +8,9 @@ from default_risk.config import CLEANS_DIR, PROCESSED_DIR
 from default_risk.scripts.auxiliar_eda_function import recreate_and_sort_series_given_rows, recreate_and_sort_the_serie_given_ids
 
 
+def processed_path(table_name: str, split: str = "train") -> Path:
+    return PROCESSED_DIR / f"{table_name}.{split}-processed.parquet"
+
 def process_bureau_balance(input_filepath: Path, output_filepath: Path):
     bureau_balance_df = pd.read_parquet(input_filepath)
 
@@ -62,8 +65,8 @@ def process_bureau_balance(input_filepath: Path, output_filepath: Path):
 
 def process_bureau(input_filepath: Path, output_filepath: Path):
     bureau_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
+    bureau_balance_agg= pd.read_parquet(processed_path(table_name="bureau_balance"))
 
-    bureau_balance_agg= pd.read_parquet(cfg.PROCESSED_DIR / "bureu_balance_agg.parquet")
     bureau_df=bureau_df.merge(bureau_balance_agg,how="left",on="id_bureau")
     bureau_df['has_bureau_balance_data'] = bureau_df['balance_months_balance_min'].notna().astype(int)
     bureau_balance_agg.head()
@@ -73,10 +76,7 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
     bureau_df["ratio_debt_limit"] =  np.where(bureau_df["amt_credit_sum"] !=0, bureau_df["amt_credit_sum_limit"] / bureau_df["amt_credit_sum"], np.nan )  
 
     bureau_df["credit_active"]=bureau_df["credit_active"].str.lower()
-    #bureau_df["credit_type"]=bureau_df["credit_type"].str.lower()
     bureau_df= pd.get_dummies(bureau_df, columns=["credit_active"], dtype=int)
-    #bureau_df= pd.get_dummies(bureau_df, columns=["credit_type"], dtype=int)
-
 
     bureau_df.sort_values(["id_curr", "days_credit"],inplace=True,ascending=False)
     last_two = bureau_df.groupby("id_curr").head(1)
@@ -129,7 +129,6 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
         "log_amt_credit_sum": ["mean","std"],
 
         #counters
-        #"cnt_credit_prolong": ["max","mean"], #,"sum"
         "days_credit_update": ["min","max","mean"], 
         "days_credit": ["min","max","mean"], 
         "days_enddate_fact": ["max"], 
@@ -143,19 +142,12 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
     }
 
     agg_from_bureau_balance_dict = {
-        ###"balance_potential_on_going_loan": ["sum"], 
         "balance_status_score_max": ["max"], #0.76 
         "balance_months_balance_max": ["max"], #0.76 
         "balance_months_balance_min": ["min"], #0.76 
         "balance_months_since_delincuency" : ["max"],#0.76 
         "balance_is_delincuency_sum" : ["max"],#0.76 
         "balance_is_delincuency_mean" : ["mean"],#0.76 
-        ##"balance_status_0_sum" : ["sum"],
-        ##"balance_is_delincuency_sum": ["sum"]
-    # "balance_months_since_2_status" : ["max"],
-    # "balance_months_since_3_status" : ["max"],
-    # "balance_months_since_4_status" : ["max"],
-    # "balance_months_since_5_status" : ["max"],    
     }
 
     active_loans= bureau_df [bureau_df["credit_active_active"] == 1]
@@ -175,8 +167,6 @@ def process_bureau(input_filepath: Path, output_filepath: Path):
 
 def process_installments_payments(input_filepath: Path, output_filepath: Path):
     installments_payment_df = pd.read_parquet(input_filepath)
-    column_order_reference="days_instalment"
-    installments_payment_df.sort_values(["id_prev",column_order_reference,"days_instalment"],inplace=True)
 
     #we starting catching this because we are probably cutting some parts of the temporal sequence
     installments_payment_df["raw_size_serie"]= installments_payment_df.groupby("id_prev").transform("size")
@@ -213,53 +203,96 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
     potentially_on_going_id = installments_payment_df[installments_payment_df["days_instalment"] > (- 33)]["id_prev"].unique()
     installments_payment_df["potentially_on_going"]= installments_payment_df["id_prev"].isin(potentially_on_going_id)   
 
+    installments_payment_df["is_underpayment"]= (installments_payment_df["amt_instalment"] >  installments_payment_df["amt_payment"]) & (installments_payment_df["amt_payment"] != 0)
+    rows_with_underpayment= installments_payment_df [installments_payment_df["is_underpayment"] == True]
+    installments_payment_df["days_of_underpayment"] = np.where(installments_payment_df["is_underpayment"], installments_payment_df["days_instalment"], np.nan)
+
     installments_payment_df["diff_expected_received"]= installments_payment_df["amt_instalment"] -  installments_payment_df["amt_payment"]
-    installments_payment_df["diff_deadline_factical_payment"]= installments_payment_df["days_instalment"] -  installments_payment_df["days_entry_payment"]
+    installments_payment_df["diff_deadline_factical_payment"]= installments_payment_df["days_entry_payment"] - installments_payment_df["days_instalment"] 
+    installments_payment_df["days_in_advance"] = installments_payment_df["days_instalment"] - installments_payment_df["days_entry_payment"]
     installments_payment_df["days_of_delinquency"]= installments_payment_df["diff_deadline_factical_payment"].clip(lower=0)
+    installments_payment_df["days_in_advance"]= installments_payment_df["days_in_advance"].clip(lower=0)
     installments_payment_df["is_delinquency"] = installments_payment_df["days_of_delinquency"] > 0 
+
+
+
+
+    def get_time_window_metrics(days_since, installments_payment_df) :    
+        last_year= installments_payment_df[installments_payment_df["days_instalment"] > days_since]
+
+        days_since = days_since * -1
+
+        last_year_agg= last_year.groupby("id_curr").agg({
+            "amt_instalment": ["max", "min","mean","sum"],
+            "amt_payment": ["max", "min","mean","sum","std"],
+            "days_of_delinquency":["mean","sum"],
+            "days_in_advance":["mean","sum"],
+            "diff_expected_received": ["max", "min", "mean", "sum"],
+            "is_delinquency" : ["mean","sum"],
+            "is_underpayment" : ["mean"],
+            "extra_instalament":["sum","mean"],
+            })
+
+
+        last_year_agg.columns = [
+        f"last_{days_since}_instalments_{col[0]}_{col[1]}"
+        for col in last_year_agg.columns
+        ]
+
+        last_year_agg= last_year_agg.reset_index()
+
+        last_year_agg[f"last_{days_since}_instalments_completion_ratio"] = np.where( last_year_agg[f"last_{days_since}_instalments_amt_instalment_sum"] > 0, last_year_agg[f"last_{days_since}_instalments_amt_payment_sum"] / last_year_agg[f"last_{days_since}_instalments_amt_instalment_sum"], 1.0 ) 
+
+        last_year_agg.to_parquet(cfg.PROCESSED_DIR / "installments_payments_last_year_metrics.parquet")
+        return last_year_agg
+
+
 
     next_installment_number = installments_payment_df.groupby("id_prev")["num_instalment_number"].shift(-1)
     next_version_number = installments_payment_df.groupby("id_prev")["num_instalment_version"].shift(-1)
     repeated_installment_mask= (installments_payment_df ["num_instalment_number"] == next_installment_number)
-    underpayment_mask= (installments_payment_df[ "amt_payment" ] < installments_payment_df ["amt_instalment"]) & (installments_payment_df[ "amt_payment" ] == 0)
+    underpayment_mask= (installments_payment_df[ "amt_payment" ] < installments_payment_df ["amt_instalment"])
     full_payment_mask= installments_payment_df[ "amt_payment" ] == installments_payment_df ["amt_instalment"] 
     installments_payment_df[ "repeated_for_underpayment" ] = (repeated_installment_mask) & (underpayment_mask)
-    installments_payment_df[ "repeated_for_reschedule" ] = (repeated_installment_mask) & (full_payment_mask)
-    installments_payment_df["repeated_for_payment_in_advance"] = (repeated_installment_mask) & (installments_payment_df[ "amt_payment" ] == 0) & (installments_payment_df["days_of_delinquency"] == 0)
+    #installments_payment_df[ "repeated_for_reschedule" ] = (repeated_installment_mask) & (full_payment_mask)
+    #installments_payment_df["repeated_for_payment_in_advance"] = (repeated_installment_mask) & (installments_payment_df[ "amt_payment" ] == 0) & (installments_payment_df["days_of_delinquency"] == 0)
     installments_payment_df["log_amt_instalment"]= np.log1p(installments_payment_df ["amt_instalment"] )
     installments_payment_df["log_amt_payment"]= np.log1p(installments_payment_df ["amt_payment"] )
+
+    installments_payment_df["extra_instalament"] = (installments_payment_df["amount_of_versions_in_sequence"] > 1) & (installments_payment_df["raw_size_serie"] <95)  & (installments_payment_df ["num_instalment_number"] >= 100)
+    interesting_cases= installments_payment_df[installments_payment_df["extra_instalament"] == True ]
 
     agg_metrics_df= installments_payment_df.groupby("id_prev").agg({
 
         #static values calculated for the entire squenece
         "raw_size_serie" : ["first"],
         "dead_tail_length" : ["first"],
-        "amount_of_versions_in_sequence" : ["first"],
-        "is_potentially_incomplete_sequence" : ["first"],
         "potentially_on_going" : ["first"],
+        "amount_of_versions_in_sequence" : ["first"],
 
         #for log transformated we want to catch the mean and the std (avoiding the impact of the heavy tail from this columns)
         "log_amt_instalment": ["mean","std"],   
         "log_amt_payment": ["mean","std"],
 
         #natural scale
-        "amt_instalment": ["max", "min","median","sum"],
+        "amt_instalment": ["max", "min","median","sum"], #, "count"
         "amt_payment": ["max", "min","median","sum"],
+        "extra_instalament":["sum","mean"],
+    
 
         #computed_differences
-        "diff_expected_received": ["max", "min","median","sum"],
-        "diff_deadline_factical_payment": ["max", "min","median","sum"],
-
-
+        "diff_expected_received": ["max", "min", "median", "sum"],
+        
         #categoricals
         "repeated_for_underpayment": ["mean","sum"],
-        "repeated_for_reschedule": ["mean","sum"],
-        "repeated_for_payment_in_advance": ["mean","sum"],
+        #"repeated_for_reschedule": ["mean","sum"],
         "is_delinquency" : ["mean","sum"],
 
-
         #counters
+        #"days_instalment":["min"],
         "days_of_delinquency":["mean","max","sum"],
+        "days_in_advance":["mean","max","sum"],
+        "days_of_underpayment" : ["max"]
     })
 
     agg_metrics_df.columns = [
@@ -269,8 +302,46 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
 
     agg_metrics_df = agg_metrics_df.reset_index()
 
-    agg_metrics_df["instalments_completion_ratio"] = np.where( agg_metrics_df["instalments_amt_instalment_sum"] > 0, agg_metrics_df["instalments_amt_payment_sum"] / agg_metrics_df["instalments_amt_instalment_sum"], 1.0 )  #if the debt is 0 or negative we assume competitud (1)                                                               )
+    agg_metrics_df["instalments_completion_ratio"] = np.where( agg_metrics_df["instalments_amt_instalment_sum"] > 0, agg_metrics_df["instalments_amt_payment_sum"] / agg_metrics_df["instalments_amt_instalment_sum"], 1.0 )  #if the debt is 0 or negative we assume competitud (1)   
+
+
+    agg_metrics_last_three_months= get_time_window_metrics(-90, installments_payment_df)
+    agg_metrics_last_year = get_time_window_metrics(-365, installments_payment_df)
+
+    temporal_windows_df = agg_metrics_last_year.merge(
+        agg_metrics_last_three_months, 
+        on="id_curr", 
+        how="outer",  
+    )
+
+    temporal_windows_df["payment_trend"] = np.where(temporal_windows_df["last_90_instalments_completion_ratio"] != 0 , temporal_windows_df["last_365_instalments_completion_ratio"] / temporal_windows_df["last_90_instalments_completion_ratio"],np.nan)
+    temporal_windows_df["delincuency_trend"] = temporal_windows_df["last_365_instalments_days_of_delinquency_mean"] - temporal_windows_df["last_90_instalments_days_of_delinquency_mean"] 
+    temporal_windows_df["underpayment_trend"] = temporal_windows_df["last_365_instalments_is_underpayment_mean"] - temporal_windows_df["last_90_instalments_is_underpayment_mean"]
+
+    temporal_windows_df_to_save=pd.DataFrame()
+    #temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_mean"]= temporal_windows_df["last_365_instalments_days_of_delinquency_mean"]
+    #temporal_windows_df_to_save["delincuency_trend"] = temporal_windows_df["delincuency_trend"]
+    temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_sum"]= temporal_windows_df["last_365_instalments_days_of_delinquency_sum"]
+    temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_mean"]= temporal_windows_df["last_365_instalments_days_of_delinquency_mean"]
+    temporal_windows_df_to_save["last_365_instalments_extra_instalament_mean"]= temporal_windows_df["last_365_instalments_extra_instalament_mean"]
+    temporal_windows_df_to_save["last_365_instalments_amt_payment_min"]= temporal_windows_df["last_365_instalments_amt_payment_min"]
+    temporal_windows_df_to_save["last_90_instalments_amt_instalment_min"]= temporal_windows_df["last_90_instalments_amt_instalment_min"]
+    temporal_windows_df_to_save["last_365_instalments_is_delinquency_mean"]= temporal_windows_df["last_365_instalments_is_delinquency_mean"]
+    temporal_windows_df_to_save["last_365_instalments_completion_ratio"]= temporal_windows_df["last_365_instalments_completion_ratio"] 
+    temporal_windows_df_to_save["last_90_instalments_completion_ratio"]= temporal_windows_df["last_90_instalments_completion_ratio"] 
+    temporal_windows_df_to_save["last_90_instalments_amt_instalment_min"]= temporal_windows_df["last_90_instalments_amt_instalment_min"]
+    temporal_windows_df_to_save["payment_trend"]= temporal_windows_df["payment_trend"]
+
+
+    temporal_windows_df_to_save["id_curr"]= temporal_windows_df["id_curr"]
+
+    output_dir = output_filepath.parent
+    base_name = output_filepath.stem
+
     agg_metrics_df.to_parquet(output_filepath)
+    temporal_windows_df_to_save.to_parquet(output_dir/ f"{base_name}-temporal_window.parquet")
+
+
 
 def process_previous_application(input_filepath: Path, output_filepath: Path):
     previous_application_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
@@ -281,13 +352,11 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
     previous_application_df["implied_interest_rate"] = (previous_application_df["amt_annuity"] * previous_application_df["cnt_payment"]) / previous_application_df["amt_credit"].replace(0, np.nan)
     previous_application_df["ratio_credit_to_annuity"]= previous_application_df["amt_credit"] / (previous_application_df["amt_annuity"].replace(0,np.nan))
 
-    instalament_df = pd.read_parquet(cfg.PROCESSED_DIR / "installments_payments.train-processed-2.parquet")
-    credit_card_df = pd.read_parquet(cfg.PROCESSED_DIR / "credit_card_agg.parquet")
-    cash_balance_df = pd.read_parquet(cfg.PROCESSED_DIR / "cash_balance_agg.parquet")
+    instalament_df = pd.read_parquet(processed_path(table_name="installments_payments"))
+    credit_card_df = pd.read_parquet(processed_path(table_name="credit_card_balance"))
 
     previous_application_df= previous_application_df.merge(instalament_df,how="left",on= "id_prev")
     previous_application_df= previous_application_df.merge(credit_card_df,how="left",on= "id_prev")
-    #previous_application_df= previous_application_df.merge(cash_balance_df,how="left",on= "id_prev")
 
     previous_application_to_pivot_df= previous_application_df.drop(columns="id_prev")
     mask_no_final= previous_application_df["flag_last_application_for_the_contract"] == "N"
@@ -301,9 +370,7 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
     df_wide = last_three.pivot(index="id_curr", columns="loan_order")
     df_wide.columns =[f"{col}_prev_{rank}" for col, rank in df_wide.columns]
     df_wide= df_wide.reset_index()
-    #previous_application_df["name_contract_status"]= previous_application_df["name_contract_status"].str.lower()
     previous_application_df["code_reject_reason"]= previous_application_df["code_reject_reason"].str.lower()
-    #previous_application_df["name_contract_type"] = previous_application_df["name_contract_type"].str.lower()
     previous_application_df = pd.get_dummies(previous_application_df, columns=[ "code_reject_reason"])
 
     #we will calculate aggregations per client for differents tables so we will separate dictionaries per table
@@ -321,7 +388,6 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
         "log_total_interest_charged" : ["mean","std"],
         "instalments_completion_ratio" : ["mean","std"],
     
-        
 
         #for non transformated columns we want to catch the representative values and the acumulated
         "amt_credit": ["max", "min","median","sum"],
@@ -339,13 +405,8 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
         "rate_down_payment": ["max","mean","min","median","std"], #
         "ratio_credit_to_goods" : ["max","mean","median","min","std"], # 
         "ratio_credit_to_annuity" : ["max","mean","min","median","std"], #
+
         #categoricals
-        #"name_contract_status_approved": ["mean","sum"],
-        #"name_contract_status_canceled": ["mean","sum"],
-        #"name_contract_status_refused": ["mean","sum"],
-        #"name_contract_type_cash loans": ["mean", "sum"], 
-        #"name_contract_type_consumer loans": ["mean", "sum"],
-        #"name_contract_type_revolving loans": ["mean", "sum"], 
         "amt_annuity_and_cnt_payment_are_missing" :["mean","sum"],
         "amt_down_payment_is_missing" : ["mean","sum"],
         "nflag_insured_on_approval" : ["mean","sum"],
@@ -353,18 +414,13 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
         "amt_goods_price_is_missing" : ["mean","sum"],
         "rate_down_payment_is_missing" : ["mean","sum"],
 
-
         #counters
         "days_decision":["mean","min","max"],
         "cnt_payment":["mean","max","sum"]
     }
 
 
-
     agg_from_instalment_payment_dict= {
-        #"instalments_days_instalment_max":["min","max"],
-        #"instalments_days_instalment_min":["min"],
-        #"instalments_days_instalment_mean":["mean"],
         "instalments_amount_of_versions_in_sequence" : ["mean","max","sum"],
         "instalments_potentially_on_going" : ["sum"],
         "instalments_dead_tail_length" : ["mean","max"],
@@ -438,16 +494,13 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
         "credit_card_potential_on_going_loan_sum"
     ]
 
-    time_window_df= pd.read_parquet(cfg.PROCESSED_DIR / "time_window_instalments.parquet")
-    time_window_credit_card= pd.read_parquet(cfg.PROCESSED_DIR / "last_six_months_agg.parquet")
-    time_window_cash_balance= pd.read_parquet(cfg.PROCESSED_DIR / "cash_balance_time_window.parquet")
-    #last_18_cash_balance= pd.read_parquet(cfg.PROCESSED_DIR / "cash_balance_last_18.parquet")
-
+    time_window_df= pd.read_parquet(cfg.PROCESSED_DIR / "installments_payments.train-processed-temporal_window.parquet")
+    time_window_credit_card= pd.read_parquet(cfg.PROCESSED_DIR / "credit_card_balance.train-processed-last_six_months_agg.parquet")
+    time_window_cash_balance= pd.read_parquet(cfg.PROCESSED_DIR / "POS_CASH_balance.train-processed_time_window.parquet")
 
     previous_application_ready_to_merge= previous_application_ready_to_merge.merge(time_window_df,how="left",on="id_curr")
     previous_application_ready_to_merge= previous_application_ready_to_merge.merge(time_window_credit_card,how="left",on="id_curr")
     previous_application_ready_to_merge= previous_application_ready_to_merge.merge(time_window_cash_balance,how="left",on="id_curr")
-    #previous_application_ready_to_merge= previous_application_ready_to_merge.merge(last_18_cash_balance,how="left",on="id_curr")
 
     for col in cols_to_fix:
         if col in previous_application_ready_to_merge.columns:
@@ -669,7 +722,6 @@ def process_application_train(input_filepath: Path, output_filepath: Path):
     cleaned_application_train["kui_ratio"] =  np.where(cleaned_application_train["days_employed"] != 0, cleaned_application_train["amt_credit"] / ((cleaned_application_train["days_employed"] * -1) * cleaned_application_train["amt_income_total"]), 0)
     cleaned_application_train["ratio_good_credit"]= cleaned_application_train["amt_goods_price"] / cleaned_application_train["amt_credit"]
     cleaned_application_train["ratio_annuity_income"] = cleaned_application_train["amt_annuity"] / cleaned_application_train["amt_income_total"]
-    #cleaned_application_train["toxic_feature_1"] = cleaned_application_train["cnt_children"] / cleaned_application_train["amt_income_total"]
 
     cleaned_application_train["credit_duration"]= cleaned_application_train["amt_credit"] / cleaned_application_train["amt_annuity"]
     cleaned_application_train["ext_1_x_2"] = cleaned_application_train["ext_source_1"] * cleaned_application_train["ext_source_2"]
@@ -678,10 +730,7 @@ def process_application_train(input_filepath: Path, output_filepath: Path):
 
     cleaned_application_train = pd.get_dummies(cleaned_application_train,columns=["organization_type"])
     cleaned_application_train = pd.get_dummies(cleaned_application_train,columns=["education_type"])
-    #cleaned_application_train = pd.get_dummies(cleaned_application_train,columns=["occupation_type"])
 
-
-    #cleaned_application_train["amount_of_scores_in_missing"] = cleaned_application_train["ext_source_1_is_missing"] + cleaned_application_train["ext_source_2_is_missing"] + cleaned_application_train["ext_source_3_is_missing"]
     ext_cols = ['ext_source_1', 'ext_source_2', 'ext_source_3']
 
     building_features_names = [
@@ -708,8 +757,6 @@ def process_application_train(input_filepath: Path, output_filepath: Path):
 
     # Agregaciones horizontales (axis=1)
     cleaned_application_train["ext_source_mean"] = cleaned_application_train[ext_cols].mean(axis=1)
-    #cleaned_application_train["ext_source_max"] = cleaned_application_train[ext_cols].max(axis=1)
-    #cleaned_application_train["ext_source_min"] = cleaned_application_train[ext_cols].min(axis=1)
     cleaned_application_train["ext_source_std"] = cleaned_application_train[ext_cols].std(axis=1)
 
 
@@ -723,5 +770,4 @@ def process_application_train(input_filepath: Path, output_filepath: Path):
     cleaned_application_train["building_features_nan_count"] = cleaned_application_train[building_features_names].isnull().sum(axis=1)
 
     cleaned_application_train= cleaned_application_train.drop(columns=numeric_bldg)
-
     cleaned_application_train.to_parquet(output_filepath)
