@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from default_risk.scripts.auxiliars_for_modeling import cast_object_into_categoricals
 from default_risk.scripts.auxiliars_for_modeling import get_baseline_setup
 from default_risk.scripts.auxiliars_for_modeling import prepare_columns
+from default_risk.scripts.auxiliars_for_modeling import get_pipeline
 
 
 def main():
@@ -22,6 +23,10 @@ def main():
     X = cast_object_into_categoricals(X)
 
     hiperparams["colsample_bytree"] = 1
-    run_cv_tracked_mlflow(xgb.XGBClassifier,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
+
+    features_for_target_encoding= [""]
+    model= xgb.XGBClassifier(**hiperparams)
+    pipeline= get_pipeline(50,model,features_for_target_encoding)
+    run_cv_tracked_mlflow(pipeline,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
 
 if __name__ == "__main__": main()
