@@ -44,19 +44,23 @@ def get_baseline_setup() -> tuple[StratifiedKFold, dict[str, Any]] :
     return cv,hiperparams
 
 def get_pipeline(smoothering_param, features_for_target_encoding,model)-> Pipeline:
-    preprocessor = ColumnTransformer(
-    transformers=[
-        ('target_encode_cat', TargetEncoder(
-                categories='auto',      
-                smooth= smoothering_param,          
-                cv=5,                   
+
+    transformers = []
+
+    if len(features_for_target_encoding) > 0:
+        transformers.append(
+            ('target_encode_cat', TargetEncoder(
+                categories='auto',
+                smooth=smoothering_param,
+                cv=5,
                 random_state=42
-            ), 
-            features_for_target_encoding
+            ), features_for_target_encoding)
         )
-    ],
+        
+    preprocessor = ColumnTransformer(
+    transformers=transformers,
     remainder='passthrough' 
-)
+    )
 
     preprocessor.set_output(transform="pandas") #god bless this
     pipeline = Pipeline([ ('preprocessor', preprocessor),('classifier', model)])

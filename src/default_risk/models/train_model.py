@@ -7,6 +7,7 @@ import default_risk.config as cfg
 import os
 import xgboost as xgb
 from dotenv import load_dotenv
+import joblib
 
 from default_risk.scripts.auxiliars_for_modeling import cast_object_into_categoricals
 from default_risk.scripts.auxiliars_for_modeling import get_baseline_setup
@@ -24,9 +25,12 @@ def main():
 
     hiperparams["colsample_bytree"] = 1
 
-    features_for_target_encoding= [""]
+    features_for_target_encoding= []
     model= xgb.XGBClassifier(**hiperparams)
-    pipeline= get_pipeline(50,model,features_for_target_encoding)
+    pipeline= get_pipeline(50,features_for_target_encoding, model)
+
     run_cv_tracked_mlflow(pipeline,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
+
+    joblib.dump(pipeline, cfg.MODELS_DIR /'model-1.0.pkl')
 
 if __name__ == "__main__": main()

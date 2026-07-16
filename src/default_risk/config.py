@@ -9,6 +9,8 @@ DATA_DIR = PROJECT_ROOT / "data/"
 NOTEBOOKS= PROJECT_ROOT / "notebooks"
 METADATA_DIR = PROJECT_ROOT / "metadata"
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+MODELS_DIR = PROJECT_ROOT / "models"
+
 
 RAW_DATA_DIR = DATA_DIR / "raw"
 INTERIM_DATA_DIR = DATA_DIR / "interim"
