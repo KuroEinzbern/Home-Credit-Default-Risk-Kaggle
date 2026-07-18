@@ -16,9 +16,11 @@ from default_risk.scripts.auxiliars_for_modeling import prepare_columns
 def main():
     MASTER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+    split = 'test'
+    
      #app_train_with_feature_engineering + prev_app + bureau + installments
-    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / "application_train-processed.parquet")
-    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / "bureau_train-processed.parquet")
+    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / f"application_{split}-processed.parquet")
+    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / f"bureau_{split}-processed.parquet")
 
     merged_df = application_train_df.merge(
         bureau_df, 
@@ -30,7 +32,7 @@ def main():
     del application_train_df , bureau_df
     gc.collect()
 
-    previous_application_df=  pd.read_parquet(cfg.PROCESSED_DIR / "previous_application.train-processed.parquet")
+    previous_application_df=  pd.read_parquet(cfg.PROCESSED_DIR / f"previous_application_{split}-processed.parquet")
 
 
     merged_df = merged_df.merge(
@@ -198,9 +200,15 @@ def main():
     "education_type_Higher education",
     "ext_source_mean"
     ]
-    features_names = list(set(internal_list + external_list + ['target', 'id_curr']))
+
+    extra_features = []
+    if(split == "train"):
+        extra_features.append('target')
+        extra_features.append('id_curr')
+
+    features_names = list(set(internal_list + external_list + extra_features))
     final_dataset = merged_df[features_names]
-    final_dataset.to_parquet(MASTER_DATA_DIR / 'prepared_dataset.parquet')
+    final_dataset.to_parquet(MASTER_DATA_DIR / f'prepared_dataset_{split}.parquet')
 
 
 if __name__ == "__main__": main()
