@@ -1,6 +1,5 @@
 
 import pandas as pd
-import gc
 import xgboost as xgb
 from default_risk.scripts.cv_mlfow_integration import run_cv_tracked_mlflow
 import default_risk.config as cfg
@@ -16,7 +15,9 @@ from default_risk.scripts.auxiliars_for_modeling import get_pipeline
 
 
 def main():
+    cfg.MODELS_DIR.mkdir(parents=True, exist_ok=True)
     load_dotenv()
+    
     experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "default_experiment")
     cv,hiperparams = get_baseline_setup()
     dataset = pd.read_parquet(cfg.MASTER_DATA_DIR / 'prepared_dataset.parquet')

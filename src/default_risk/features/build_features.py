@@ -17,8 +17,8 @@ def main():
     MASTER_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
      #app_train_with_feature_engineering + prev_app + bureau + installments
-    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / "application_train.train-processed.parquet")
-    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / "bureau.train-processed.parquet")
+    application_train_df = pd.read_parquet(cfg.PROCESSED_DIR / "application_train-processed.parquet")
+    bureau_df = pd.read_parquet(cfg.PROCESSED_DIR / "bureau_train-processed.parquet")
 
     merged_df = application_train_df.merge(
         bureau_df, 
