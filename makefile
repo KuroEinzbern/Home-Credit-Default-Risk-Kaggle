@@ -1,3 +1,8 @@
+ifeq ($(OS),Windows_NT)
+    SHELL := bash.exe
+else
+    SHELL := bash
+endif
 .PHONY: data features all
 
 data:

@@ -24,7 +24,7 @@ def agroup_ultra_rare_categories(col : pd.Series, umbral_of_observations : int):
     agrouped_col= col.where(col.map(count) < umbral_of_observations , "other")
     return agrouped_col.astype("category")
    
-def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
+def clean_credit_card_balance(input_filepath: Path, output_filepath: Path, is_inference: bool= False):
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
@@ -170,18 +170,18 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path):
     
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_installments_payments(input_filepath: Path, output_filepath: Path):
+def clean_installments_payments(input_filepath: Path, output_filepath: Path, is_inference: bool= False):
     df = pd.read_parquet(input_filepath)
 
     df.sort_values(["SK_ID_PREV","DAYS_INSTALMENT"],inplace=True)
 
+
     df["INITIAL_VERSION"]= df.groupby("SK_ID_PREV")["NUM_INSTALMENT_VERSION"].transform("first")
 
-    nans_to_drop= (df["AMT_PAYMENT"].isna()) & (df["NUM_INSTALMENT_VERSION"] != df["INITIAL_VERSION"])
-
-
-    index_to_drop=df[nans_to_drop].index
-    df.drop(index=index_to_drop,inplace=True)
+    if(not is_inference) :
+        nans_to_drop= (df["AMT_PAYMENT"].isna()) & (df["NUM_INSTALMENT_VERSION"] != df["INITIAL_VERSION"])
+        index_to_drop=df[nans_to_drop].index
+        df.drop(index=index_to_drop,inplace=True)
 
     
     df_clean = pd.DataFrame()
@@ -353,15 +353,16 @@ def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
 
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_previous_application(input_filepath: Path, output_filepath: Path):
+def clean_previous_application(input_filepath: Path, output_filepath: Path,is_inference : bool=False):
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
+    if(not is_inference) :
     #drop inconsistencies previous application
-    df["AMT_CREDIT"].dropna(inplace=True)
-    df["PRODUCT_COMBINATION"].dropna(inplace=True)
-    index_to_drop=df[(df["AMT_ANNUITY"].isnull()) & (df["CNT_PAYMENT"].notna())].index
-    df.drop(index=index_to_drop,inplace=True)
+        df["AMT_CREDIT"].dropna(inplace=True)
+        df["PRODUCT_COMBINATION"].dropna(inplace=True)
+        index_to_drop=df[(df["AMT_ANNUITY"].isnull()) & (df["CNT_PAYMENT"].notna())].index
+        df.drop(index=index_to_drop,inplace=True)
 
     df_clean["id_prev"] = df["SK_ID_PREV"]
     df_clean["id_curr"] = df["SK_ID_CURR"]
@@ -448,23 +449,23 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path):
 
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_application_train(input_filepath: Path, output_filepath: Path):
+def clean_application_train(input_filepath: Path, output_filepath: Path, is_inference: bool =False):
     df = pd.read_parquet(input_filepath)
     df_clean = {}
 
-    #drop inconsistencies
-    rows_to_drop = (
-        (df["SK_ID_CURR"] == "XNA") | 
-        (df["AMT_ANNUITY"].isna()) |
-        (df["AMT_GOODS_PRICE"].isna()) |
-        (df["NAME_FAMILY_STATUS"] == "Unknown") |  
-        (df["CNT_FAM_MEMBERS"].isna()) |
-        (df["DAYS_LAST_PHONE_CHANGE"].isna()) 
-    )
-    
+    if(not is_inference):
+        #drop inconsistencies
+        rows_to_drop = (
+            (df["SK_ID_CURR"] == "XNA") | 
+            (df["AMT_ANNUITY"].isna()) |
+            (df["AMT_GOODS_PRICE"].isna()) |
+            (df["NAME_FAMILY_STATUS"] == "Unknown") |  
+            (df["CNT_FAM_MEMBERS"].isna()) |
+            (df["DAYS_LAST_PHONE_CHANGE"].isna()) 
+        )
 
-    index_to_drop=df[rows_to_drop].index
-    df.drop(index=index_to_drop,inplace=True)
+        index_to_drop=df[rows_to_drop].index
+        df.drop(index=index_to_drop,inplace=True)
 
     building_features_names= ["APARTMENTS_AVG", "BASEMENTAREA_AVG","YEARS_BEGINEXPLUATATION_AVG","YEARS_BUILD_AVG","COMMONAREA_AVG","ELEVATORS_AVG","ENTRANCES_AVG"
     ,"FLOORSMAX_AVG","FLOORSMIN_AVG","LANDAREA_AVG","LIVINGAPARTMENTS_AVG","LIVINGAREA_AVG","NONLIVINGAPARTMENTS_AVG","NONLIVINGAREA_AVG","APARTMENTS_MODE","BASEMENTAREA_MODE",
@@ -629,18 +630,19 @@ def clean_application_train(input_filepath: Path, output_filepath: Path):
     df_clean_copied = pd.DataFrame(df_clean)
     df_clean_copied.to_parquet(output_filepath, index=False)
 
-def clean_bureau(input_filepath: Path, output_filepath: Path):
+def clean_bureau(input_filepath: Path, output_filepath: Path, is_inference: bool =False):
     df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
-     #drop inconsistencies
-    rows_to_drop = (
-        ((df['CREDIT_ACTIVE'] == 'Active') & (df['DAYS_ENDDATE_FACT'].notna())) | 
-        ((df['CREDIT_ACTIVE'] == 'Closed') & (df['DAYS_ENDDATE_FACT'].isna())) |
-        (df["AMT_CREDIT_SUM"].isna()) 
-    )
-    index_to_drop=df[rows_to_drop].index
-    df.drop(index=index_to_drop,inplace=True)
+    if(not is_inference) :
+        #drop inconsistencies
+        rows_to_drop = (
+            ((df['CREDIT_ACTIVE'] == 'Active') & (df['DAYS_ENDDATE_FACT'].notna())) | 
+            ((df['CREDIT_ACTIVE'] == 'Closed') & (df['DAYS_ENDDATE_FACT'].isna())) |
+            (df["AMT_CREDIT_SUM"].isna()) 
+        )
+        index_to_drop=df[rows_to_drop].index
+        df.drop(index=index_to_drop,inplace=True)
     
     # id_curr
     df_clean['id_curr'] = df['SK_ID_CURR']
