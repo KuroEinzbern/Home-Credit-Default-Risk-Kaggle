@@ -451,6 +451,7 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path,is_in
 
 def clean_application_train(input_filepath: Path, output_filepath: Path, is_inference: bool =False):
     df = pd.read_parquet(input_filepath)
+    print('cleaning application traion with', input_filepath, output_filepath)
     df_clean = {}
 
     if(not is_inference):
@@ -478,7 +479,8 @@ def clean_application_train(input_filepath: Path, output_filepath: Path, is_infe
 
     df_clean["id_curr"] = df["SK_ID_CURR"]
 
-    df_clean["target"] = df["TARGET"]
+    if "TARGET" in df.columns:
+        df_clean["target"] = df["TARGET"]
 
     df_clean["name_contract_type"] = df["NAME_CONTRACT_TYPE"]
 

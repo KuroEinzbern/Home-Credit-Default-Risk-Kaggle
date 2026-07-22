@@ -8,8 +8,9 @@ from default_risk.config import CLEANS_DIR, PROCESSED_DIR
 from default_risk.scripts.auxiliar_eda_function import recreate_and_sort_series_given_rows, recreate_and_sort_the_serie_given_ids
 
 
-def processed_path(table_name: str, split: str = "train") -> Path:
-    return PROCESSED_DIR / f"{table_name}.{split}-processed.parquet"
+def processed_path(table_name: str, split: str = "train", artifact: str = "") -> Path:
+    artifact_suffix = f"-{artifact}" if artifact else ""
+    return PROCESSED_DIR / f"{table_name}_{split}-processed{artifact_suffix}.parquet"
 
 def process_bureau_balance(input_filepath: Path, output_filepath: Path):
     bureau_balance_df = pd.read_parquet(input_filepath)
@@ -63,9 +64,9 @@ def process_bureau_balance(input_filepath: Path, output_filepath: Path):
     agg_metrics_df= aggregated_bureau_balance.reset_index()
     agg_metrics_df.to_parquet(output_filepath)
 
-def process_bureau(input_filepath: Path, output_filepath: Path):
+def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_agg_filepath: Path):
     bureau_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
-    bureau_balance_agg= pd.read_parquet(processed_path(table_name="bureau_balance"))
+    bureau_balance_agg= pd.read_parquet(bureau_balance_agg_filepath)
 
     bureau_df=bureau_df.merge(bureau_balance_agg,how="left",on="id_bureau")
     bureau_df['has_bureau_balance_data'] = bureau_df['balance_months_balance_min'].notna().astype(int)
@@ -343,7 +344,7 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
 
 
 
-def process_previous_application(input_filepath: Path, output_filepath: Path):
+def process_previous_application(input_filepath: Path, installments_filepath: Path, credit_card_filepath: Path, installments_time_window_filepath: Path, credit_card_time_window_filepath: Path, cash_balance_time_window_filepath: Path, output_filepath: Path):
     previous_application_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
     #creating columns before aggregation
     previous_application_df["diff_application_credit"] = previous_application_df["amt_application"] - previous_application_df["amt_credit"]
@@ -352,8 +353,8 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
     previous_application_df["implied_interest_rate"] = (previous_application_df["amt_annuity"] * previous_application_df["cnt_payment"]) / previous_application_df["amt_credit"].replace(0, np.nan)
     previous_application_df["ratio_credit_to_annuity"]= previous_application_df["amt_credit"] / (previous_application_df["amt_annuity"].replace(0,np.nan))
 
-    instalament_df = pd.read_parquet(processed_path(table_name="installments_payments"))
-    credit_card_df = pd.read_parquet(processed_path(table_name="credit_card_balance"))
+    instalament_df = pd.read_parquet(installments_filepath)
+    credit_card_df = pd.read_parquet(credit_card_filepath)
 
     previous_application_df= previous_application_df.merge(instalament_df,how="left",on= "id_prev")
     previous_application_df= previous_application_df.merge(credit_card_df,how="left",on= "id_prev")
@@ -494,9 +495,9 @@ def process_previous_application(input_filepath: Path, output_filepath: Path):
         "credit_card_potential_on_going_loan_sum"
     ]
 
-    time_window_df= pd.read_parquet(cfg.PROCESSED_DIR / "installments_payments.train-processed-temporal_window.parquet")
-    time_window_credit_card= pd.read_parquet(cfg.PROCESSED_DIR / "credit_card_balance.train-processed-last_six_months_agg.parquet")
-    time_window_cash_balance= pd.read_parquet(cfg.PROCESSED_DIR / "POS_CASH_balance.train-processed_time_window.parquet")
+    time_window_df= pd.read_parquet(installments_time_window_filepath)
+    time_window_credit_card= pd.read_parquet(credit_card_time_window_filepath)
+    time_window_cash_balance= pd.read_parquet(cash_balance_time_window_filepath)
 
     previous_application_ready_to_merge= previous_application_ready_to_merge.merge(time_window_df,how="left",on="id_curr")
     previous_application_ready_to_merge= previous_application_ready_to_merge.merge(time_window_credit_card,how="left",on="id_curr")
