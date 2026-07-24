@@ -5,6 +5,8 @@ from default_risk.config import CLEANS_DIR, DATA_DIR, PROCESSED_DIR, RAW_DATA_DI
 from default_risk.data.clean import clean_bureau, clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
 from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
+from typing import List, Optional
+
 
 from default_risk.data.process import process_application_train, process_bureau, process_bureau_balance, process_credit_card_balance, process_installments_payments, process_pos_cash_balance, process_previous_application
 canonizated_tables: dict ={}
@@ -27,7 +29,6 @@ cleaning_dict: dict[str, Callable] = {
         "POS_CASH_balance" : clean_pos_cash_balance,
         "previous_application" : clean_previous_application,
         "application" : clean_application_train,
-
 }
 
 procesing_dict: dict[str, Callable] = {
@@ -38,7 +39,6 @@ procesing_dict: dict[str, Callable] = {
         "POS_CASH_balance": process_pos_cash_balance,
         "previous_application" : process_previous_application,
         "application": process_application_train
-
 }
 
 cleaning_tables_list: list= list(cleaning_dict.keys())
@@ -55,15 +55,9 @@ def log_step(table_name: str):
         raise e
     
 def main():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    SPLITS_DIR.mkdir(parents=True, exist_ok=True)
-    CLEANS_DIR.mkdir(parents=True, exist_ok=True)
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     
     if not any(Path(RAW_DATA_DIR).iterdir()):
         download_dataset()
-  
 
     canonizate()
 
@@ -77,9 +71,11 @@ def main():
             print(f"Cleaning table {table_name}...", end='', flush=True)
             path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name, split)
             cleaner= cleaning_dict[table_name]
-            cleaner(path_bronze_layer_file,path_silver_layer_file)
+            is_inference= False
+            if(split == "test"):
+                is_inference= True
+            cleaner(path_bronze_layer_file,path_silver_layer_file,is_inference)
             print("Done.")
-
 
         with log_step("bureau_balance"):
             process_bureau_balance(*generate_process_paths("bureau_balance", split))
@@ -118,6 +114,12 @@ def main():
                 output_filepath=generate_process_paths("previous_application", split)[1]
             )
 
+def apply_cleaning(table_name,cleaning_dict,is_inference, id_subset: Optional[List[int]] = None):
+            print(f"Cleaning table {table_name}...", end='', flush=True)
+            path_bronze_layer_file, path_silver_layer_file = generate_cleaner_paths(table_name)
+            cleaner= cleaning_dict[table_name]
+            cleaner(path_bronze_layer_file,path_silver_layer_file,is_inference,id_subset)
+            print("Done.")
         
 if __name__ == "__main__":
     main()

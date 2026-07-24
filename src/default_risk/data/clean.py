@@ -1,6 +1,21 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from collections.abc import Callable
+from typing import List, Optional
+
+def get_cleaning_dict() :
+    cleaning_dict: dict[str, Callable] = {
+            "bureau_balance" : clean_bureau_balance,
+            "bureau": clean_bureau,
+            "installments_payments" : clean_installments_payments,
+            "credit_card_balance" : clean_credit_card_balance,
+            "POS_CASH_balance" : clean_pos_cash_balance,
+            "previous_application" : clean_previous_application,
+            "application" : clean_application_train,
+            }
+    return cleaning_dict
+
 
 def clip_p999(series, set_negatives_to_nan=False):
     s = series.copy()
@@ -24,9 +39,13 @@ def agroup_ultra_rare_categories(col : pd.Series, umbral_of_observations : int):
     agrouped_col= col.where(col.map(count) < umbral_of_observations , "other")
     return agrouped_col.astype("category")
    
-def clean_credit_card_balance(input_filepath: Path, output_filepath: Path, is_inference: bool= False):
-    df = pd.read_parquet(input_filepath)
+def clean_credit_card_balance(input_filepath: Path, output_filepath: Path, is_inference: bool= False, id_subset: Optional[List[int]] = None):
     df_clean = pd.DataFrame()
+
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
+    
 
     # id_prev
     df_clean['id_prev'] = df['SK_ID_PREV']
@@ -170,8 +189,10 @@ def clean_credit_card_balance(input_filepath: Path, output_filepath: Path, is_in
     
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_installments_payments(input_filepath: Path, output_filepath: Path, is_inference: bool= False):
-    df = pd.read_parquet(input_filepath)
+def clean_installments_payments(input_filepath: Path, output_filepath: Path, is_inference: bool= False, id_subset: Optional[List[int]] = None):
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
 
     df.sort_values(["SK_ID_PREV","DAYS_INSTALMENT"],inplace=True)
 
@@ -229,8 +250,11 @@ def clean_installments_payments(input_filepath: Path, output_filepath: Path, is_
 
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
-    df = pd.read_parquet(input_filepath)
+def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path,is_inference: bool= False, id_subset: Optional[List[int]] = None):
+
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
     
     df = df.sort_values(by=['SK_ID_PREV', 'MONTHS_BALANCE'], ascending=[True, True])
     df_clean = pd.DataFrame()
@@ -330,8 +354,11 @@ def clean_pos_cash_balance(input_filepath: Path, output_filepath: Path):
 
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_bureau_balance(input_filepath: Path, output_filepath: Path):
-    df = pd.read_parquet(input_filepath)
+def clean_bureau_balance(input_filepath: Path, output_filepath: Path,is_inference: bool= False, id_subset: Optional[List[int]] = None):
+
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
     df.sort_values(['SK_ID_BUREAU', 'MONTHS_BALANCE'],inplace=True)
@@ -449,8 +476,10 @@ def clean_previous_application(input_filepath: Path, output_filepath: Path,is_in
 
     df_clean.to_parquet(output_filepath, index=False)
 
-def clean_application_train(input_filepath: Path, output_filepath: Path, is_inference: bool =False):
-    df = pd.read_parquet(input_filepath)
+def clean_application_train(input_filepath: Path, output_filepath: Path, is_inference: bool =False, id_subset: Optional[List[int]] = None):
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
     print('cleaning application traion with', input_filepath, output_filepath)
     df_clean = {}
 
@@ -632,8 +661,11 @@ def clean_application_train(input_filepath: Path, output_filepath: Path, is_infe
     df_clean_copied = pd.DataFrame(df_clean)
     df_clean_copied.to_parquet(output_filepath, index=False)
 
-def clean_bureau(input_filepath: Path, output_filepath: Path, is_inference: bool =False):
-    df = pd.read_parquet(input_filepath)
+def clean_bureau(input_filepath: Path, output_filepath: Path, is_inference: bool =False, id_subset: Optional[List[int]] = None):
+
+    if((is_inference) and (id_subset is not None)) :
+        df = pd.read_parquet(input_filepath, filters=[('id_curr', 'in', id_subset)])
+    else : df = pd.read_parquet(input_filepath)
     df_clean = pd.DataFrame()
 
     if(not is_inference) :

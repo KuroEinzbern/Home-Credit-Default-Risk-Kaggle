@@ -33,6 +33,8 @@ def main():
 
     run_cv_tracked_mlflow(pipeline,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
 
+    pipeline.fit(X,Y)
+
     joblib.dump(pipeline, cfg.MODELS_DIR /'model-1.0.pkl')
 
 if __name__ == "__main__": main()

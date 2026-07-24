@@ -16,12 +16,14 @@ from sklearn.inspection import permutation_importance
 import default_risk.config as cfg
 import logging
 from functools import singledispatch
+import lightgbm as lgb
 
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,silent: bool=False) -> None:
     mlflow.set_experiment(experiment_name)
     mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=silent)
+    mlflow.lightgbm.autolog(disable=True)
     parent_name= "Parent_" + run_name
     oof_auc_prob=np.zeros(len(Y)) #for pre-alocated memory 
     list_scores=[]
@@ -34,10 +36,10 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
         original_model = model
         for train_index, val_index in cv.split(X,Y) : 
             fold = fold +1
-            x_train= X.iloc[train_index]
-            y_train= Y.iloc[train_index]
-            x_val= X.iloc[val_index]
-            y_val= Y.iloc[val_index]
+            x_train = X.iloc[train_index].copy()
+            y_train = Y.iloc[train_index].copy()
+            x_val = X.iloc[val_index].copy()
+            y_val = Y.iloc[val_index].copy()
             model= clone(original_model)
             #model= model_class(**model_params)
             name_of_nested_run= f"{run_name}_child_{fold:d}"
@@ -158,7 +160,7 @@ def _(model: Pipeline,x_train,y_train,x_val,y_val) :
     # 3. Enrutar: Crear argumentos dinámicos apuntando al paso final
     fit_kwargs = {
         f"{final_step_name}__eval_set": [(x_val_transformed, y_val)],
-        f"{final_step_name}__verbose": False
+        #f"{final_step_name}__verbose": False
     }
     
     # 4. Entrenar LA PIPELINE COMPLETA con los kwargs ruteados
@@ -166,7 +168,19 @@ def _(model: Pipeline,x_train,y_train,x_val,y_val) :
     return model
 
 
-@train_the_model.register
+"""@train_the_model.register
 def _(model: BaseEstimator,x_train,y_train,x_val,y_val) :
-    model.fit(x_train,y_train,eval_set =[(x_val,y_val)], verbose=False)
+    model.fit(x_train,y_train,eval_set =[(x_val,y_val)], verbose=False) #
+    return model"""""
+
+
+@train_the_model.register(lgb.LGBMClassifier)
+def _(model: lgb.LGBMClassifier, x_train, y_train, x_val, y_val):
+    model.fit(
+        x_train, 
+        y_train,
+        x_val,
+        y_val,
+        callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False)]
+        )
     return model

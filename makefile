@@ -16,3 +16,6 @@ train:
 
 model: data features train
 	echo "Pipeline completo ejecutado"
+
+predict: 
+	python src/default_risk/models/predict_model.py
