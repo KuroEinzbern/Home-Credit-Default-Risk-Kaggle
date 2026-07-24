@@ -151,19 +151,15 @@ def train_the_model(model,x_train,y_train,x_val,y_val) :
 @train_the_model.register
 def _(model: Pipeline,x_train,y_train,x_val,y_val) :
     final_step_name = model.steps[-1][0]
-    preprocessor = model[:-1] # Toda la pipeline excepto el último paso
+    preprocessor = model[:-1] 
     
-    # 2. Entrenar SOLO el preprocesador y transformar x_val
     preprocessor.fit(x_train, y_train)
     x_val_transformed = preprocessor.transform(x_val)
     
-    # 3. Enrutar: Crear argumentos dinámicos apuntando al paso final
     fit_kwargs = {
         f"{final_step_name}__eval_set": [(x_val_transformed, y_val)],
         #f"{final_step_name}__verbose": False
     }
-    
-    # 4. Entrenar LA PIPELINE COMPLETA con los kwargs ruteados
     model.fit(x_train, y_train, **fit_kwargs)
     return model
 
