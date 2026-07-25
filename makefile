@@ -19,3 +19,6 @@ model: data features train
 
 predict: 
 	python src/default_risk/models/predict_model.py
+
+optimize: 
+	python src/default_risk/models/optimize_model.py
