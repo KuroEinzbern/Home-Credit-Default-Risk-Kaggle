@@ -8,6 +8,8 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import TargetEncoder
+import re
+
 
 
 def cast_object_into_categoricals(X : pd.DataFrame) -> pd.DataFrame:
@@ -23,9 +25,12 @@ def apply_cyclical_encoding(df, column, max_val) -> pd.DataFrame:
 
     return df
 
-def prepare_columns(df : pd.DataFrame, columns_to_drop : list=["id_curr"], target_name : str ="target")  -> tuple[ pd.DataFrame, pd.Series] :
+def prepare_columns(df : pd.DataFrame, columns_to_drop : list=["id_curr"], target_name : str ="target", santize_text : bool = False)  -> tuple[ pd.DataFrame, pd.Series] :
     Y= df[target_name]
     X= df.drop(columns=[target_name])
+    if(santize_text):
+        X = X.rename(
+        columns=lambda c: re.sub(r'[^A-Za-z0-9_]', '_', c))
     X.drop(columns=columns_to_drop,inplace=True)
     return X,Y
 

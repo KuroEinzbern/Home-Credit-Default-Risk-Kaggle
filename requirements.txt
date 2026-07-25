@@ -14,5 +14,5 @@ python-dotenv
 kagglehub
 borutashap
 graphviz
-lightgbm>=4.0.0
+lightgbm==4.3.0
 catboost>=1.2.0

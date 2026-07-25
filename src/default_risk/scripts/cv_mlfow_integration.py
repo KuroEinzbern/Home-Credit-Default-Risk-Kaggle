@@ -17,6 +17,8 @@ import default_risk.config as cfg
 import logging
 from functools import singledispatch
 import lightgbm as lgb
+import xgboost as xgb
+
 
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
@@ -24,6 +26,7 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
     mlflow.set_experiment(experiment_name)
     mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=silent)
     mlflow.lightgbm.autolog(disable=True)
+    mlflow.sklearn.autolog(disable=True)
     parent_name= "Parent_" + run_name
     oof_auc_prob=np.zeros(len(Y)) #for pre-alocated memory 
     list_scores=[]
@@ -36,10 +39,10 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
         original_model = model
         for train_index, val_index in cv.split(X,Y) : 
             fold = fold +1
-            x_train = X.iloc[train_index].copy()
-            y_train = Y.iloc[train_index].copy()
-            x_val = X.iloc[val_index].copy()
-            y_val = Y.iloc[val_index].copy()
+            x_train = X.iloc[train_index]
+            y_train = Y.iloc[train_index]
+            x_val = X.iloc[val_index]
+            y_val = Y.iloc[val_index]
             model= clone(original_model)
             #model= model_class(**model_params)
             name_of_nested_run= f"{run_name}_child_{fold:d}"
@@ -115,7 +118,7 @@ def save_feature_importance(trained_model, X: pd.DataFrame, run_name: str) -> No
     df_feature_importance=pd.DataFrame()
     #features_names= X.columns
     trained_model= extract_final_model(trained_model)
-    features_names_raw = trained_model.feature_names_in_
+    features_names_raw = get_the_features_name(X,train_the_model)
     features_names_clean = [col.replace('remainder__', '').replace('target_encode_cat__', '') for col in features_names_raw]
     importances= trained_model.feature_importances_
     df_feature_importance["feature_name"] = features_names_clean
@@ -123,6 +126,7 @@ def save_feature_importance(trained_model, X: pd.DataFrame, run_name: str) -> No
     df_feature_importance.sort_values(by="importances",ascending=True,inplace=True)
     persist_and_export_feature_importance(df_feature_importance,run_name)
     return
+
 
 
 @singledispatch
@@ -142,6 +146,25 @@ def _(model: BaseEstimator) :
 
 
 
+
+@singledispatch
+def get_the_features_name(X, model) -> BaseEstimator: 
+    print("unknow type in the model")
+    return X.columns
+
+
+@get_the_features_name.register
+def _(X, model: lgb.LGBMClassifier) :
+    return model.booster_.feature_name()
+
+
+@get_the_features_name.register
+def _(X, model: xgb.XGBClassifier) :
+    return model.feature_names_in_
+
+
+
+
 @singledispatch
 def train_the_model(model,x_train,y_train,x_val,y_val) : 
     print("unknow type in the model")
@@ -158,16 +181,16 @@ def _(model: Pipeline,x_train,y_train,x_val,y_val) :
     
     fit_kwargs = {
         f"{final_step_name}__eval_set": [(x_val_transformed, y_val)],
-        #f"{final_step_name}__verbose": False
+       # f"{final_step_name}__verbose": False
     }
     model.fit(x_train, y_train, **fit_kwargs)
     return model
 
 
-"""@train_the_model.register
+@train_the_model.register
 def _(model: BaseEstimator,x_train,y_train,x_val,y_val) :
-    model.fit(x_train,y_train,eval_set =[(x_val,y_val)], verbose=False) #
-    return model"""""
+    model.fit(x_train,y_train,eval_set =[(x_val,y_val)], verbose=False)
+    return model
 
 
 @train_the_model.register(lgb.LGBMClassifier)
@@ -175,8 +198,7 @@ def _(model: lgb.LGBMClassifier, x_train, y_train, x_val, y_val):
     model.fit(
         x_train, 
         y_train,
-        x_val,
-        y_val,
+        eval_set=[(x_val, y_val)],
         callbacks=[lgb.early_stopping(stopping_rounds=50, verbose=False)]
         )
     return model
