@@ -22,7 +22,7 @@ SPLITS_DIR = INTERIM_DATA_DIR / "01_Splits"
 CLEANS_DIR = INTERIM_DATA_DIR / "02_Cleans"
 PROCESSED_DIR = INTERIM_DATA_DIR / "03_Processed"
 
-
+MODEL_PARAMS = PROJECT_ROOT / "params.yaml"
 DUMP_FROM_NOTEBOOKS= NOTEBOOKS / "dumps_from_notebooks"
 
 # Rutas específicas a archivos

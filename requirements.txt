@@ -16,3 +16,4 @@ borutashap
 graphviz
 lightgbm==4.3.0
 catboost>=1.2.0
+optuna
