@@ -1,0 +1,8 @@
+xgboost:
+  objective: binary:logistic
+  random_state: 42
+  eval_metric: auc
+  enable_categorical: true
+  min_child_weight: 30
+  n_jobs: -1
+  colsample_bytree: 0.8
