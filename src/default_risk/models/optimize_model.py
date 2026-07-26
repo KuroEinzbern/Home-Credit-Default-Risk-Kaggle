@@ -25,8 +25,8 @@ from default_risk.scripts.auxiliars_for_modeling import get_baseline_setup
 from default_risk.scripts.auxiliars_for_modeling import prepare_columns
 from default_risk.scripts.auxiliars_for_modeling import get_pipeline
 
-STUDY_NAME = "optuna-optimization-1.1"
-N_TRIALS = 60
+STUDY_NAME = "optuna-optimization-1.3"
+N_TRIALS = 500
 MAX_ROUNDS = 3000
 EARLY_STOPPING_ROUNDS = 100
 SEED = 42
