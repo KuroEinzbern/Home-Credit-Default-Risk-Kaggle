@@ -29,7 +29,7 @@ from default_risk.data.make_dataset import apply_cleaning
 
 
 def main():
-    pipeline= load_model(cfg.MODELS_DIR / "model-1.0.pkl")
+    pipeline= load_model(cfg.MODELS_DIR / "model-1.1.pkl")
     test_application= pd.read_parquet(cfg.MASTER_DATA_DIR / "prepared_dataset_test.parquet")
     id_to_predict= test_application["id_curr"]
     X_test= test_application.drop(columns= ["id_curr"])

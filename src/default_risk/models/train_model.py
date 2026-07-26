@@ -33,14 +33,14 @@ def main():
     load_dotenv()
     
     experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "default_experiment")
-    cv = get_baseline_setup()
-    dataset = pd.read_parquet(cfg.MASTER_DATA_DIR / 'prepared_dataset.parquet')
+    cv, _ = get_baseline_setup()
+    dataset = pd.read_parquet(cfg.MASTER_DATA_DIR / 'prepared_dataset_train.parquet')
     X,Y = prepare_columns(dataset)
     X = cast_object_into_categoricals(X)
 
     hiperparams = load_xgboost_params()
     features_for_target_encoding= []
-    
+
     model= xgb.XGBClassifier(**hiperparams)
     pipeline= get_pipeline(50,features_for_target_encoding, model)
 
@@ -48,6 +48,6 @@ def main():
 
     pipeline.fit(X,Y)
 
-    joblib.dump(pipeline, cfg.MODELS_DIR /'model-1.0.pkl')
+    joblib.dump(pipeline, cfg.MODELS_DIR /'model-1.1.pkl')
 
 if __name__ == "__main__": main()
