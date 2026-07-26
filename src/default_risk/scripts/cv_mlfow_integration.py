@@ -24,9 +24,9 @@ logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,silent: bool=False) -> None:
     mlflow.set_experiment(experiment_name)
-    mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=silent)
-    mlflow.lightgbm.autolog(disable=True)
-    mlflow.sklearn.autolog(disable=True)
+    #mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=silent)
+    #mlflow.lightgbm.autolog(enabl)
+    mlflow.sklearn.autolog(disable=False)
     parent_name= "Parent_" + run_name
     oof_auc_prob=np.zeros(len(Y)) #for pre-alocated memory 
     list_scores=[]

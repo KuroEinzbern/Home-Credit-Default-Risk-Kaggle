@@ -215,9 +215,7 @@ def main() -> None:
     }
 
     def build_pipeline(params: dict[str, Any]) -> Pipeline:
-        return get_pipeline(
-            50, features_for_target_encoding, xgb.XGBClassifier(**params)
-        )
+        return get_pipeline(50, features_for_target_encoding, xgb.XGBClassifier(**params))
 
     mlflow.set_experiment(experiment_name)
     mlflow.xgboost.autolog(disable=True) 
