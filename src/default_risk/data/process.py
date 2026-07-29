@@ -91,6 +91,11 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
 
     bureau_df["log_amt_credit_sum"] = np.log1p(bureau_df["amt_credit_sum"])
 
+    bureau_df["credit_type"]= bureau_df["credit_type"].str.lower()
+    bureau_df= pd.get_dummies(bureau_df,columns= ["credit_type"])
+
+
+
     bureau_agg_dic_active= {
         "id_curr": ["count"],
 
@@ -99,6 +104,7 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
         "amt_credit_sum_limit": ["max","mean","min","std"],
         "amt_annuity" : ["max","mean","min","std"], #
         "amt_credit_sum_debt" : ["max","mean","sum","std"],
+
 
         #log_transformed
         "log_amt_credit_sum": ["mean","std"],
@@ -114,7 +120,12 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
         "amt_annuity_is_missing" : ["mean","sum"],
         "have_amt_credit_sum_overdue" : ["mean","sum"],
         "amt_credit_max_overdue" :["max","mean","sum"],
-        
+
+        #categorical
+        "credit_type_credit card" : ["sum"], # ,"sum"
+        "credit_type_mortgage" : ["mean","sum"], # ,"sum"
+        "credit_type_microloan" : ["mean","sum"], #  ,"sum"
+        "credit_type_consumer credit": ["sum"], #,"sum"
     }
 
     bureau_agg_dic_closed = {
@@ -130,6 +141,7 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
         "log_amt_credit_sum": ["mean","std"],
 
         #counters
+        #"cnt_credit_prolong": ["max","mean"], #,"sum"
         "days_credit_update": ["min","max","mean"], 
         "days_credit": ["min","max","mean"], 
         "days_enddate_fact": ["max"], 
@@ -140,7 +152,14 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
         "amt_annuity_is_missing" : ["mean","sum"],
         "amt_credit_max_overdue" :["max","mean","sum"],
         "amt_credit_max_overdue_is_missing" :["mean","sum"],
+
+        #categorical
+        "credit_type_credit card" : ["sum"], #,"sum"
+        "credit_type_mortgage" : ["mean","sum"], #,"sum"
+        "credit_type_microloan" : ["mean","sum"], #,"sum"
+        "credit_type_consumer credit": ["sum"], #,"sum"
     }
+
 
     agg_from_bureau_balance_dict = {
         "balance_status_score_max": ["max"], #0.76 
@@ -344,7 +363,7 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
 
 
 
-def process_previous_application(input_filepath: Path, installments_filepath: Path, credit_card_filepath: Path, installments_time_window_filepath: Path, credit_card_time_window_filepath: Path, cash_balance_time_window_filepath: Path, output_filepath: Path):
+def process_previous_application(input_filepath: Path, installments_filepath: Path, credit_card_filepath: Path, cash_balance_filepath: Path, installments_time_window_filepath: Path, credit_card_time_window_filepath: Path, cash_balance_time_window_filepath: Path, output_filepath: Path):
     previous_application_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
     #creating columns before aggregation
     previous_application_df["diff_application_credit"] = previous_application_df["amt_application"] - previous_application_df["amt_credit"]
@@ -355,9 +374,12 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
 
     instalament_df = pd.read_parquet(installments_filepath)
     credit_card_df = pd.read_parquet(credit_card_filepath)
+    cash_balance_df = pd.read_parquet(cash_balance_filepath)
 
     previous_application_df= previous_application_df.merge(instalament_df,how="left",on= "id_prev")
     previous_application_df= previous_application_df.merge(credit_card_df,how="left",on= "id_prev")
+    previous_application_df= previous_application_df.merge(cash_balance_df,how="left",on= "id_prev")
+
 
     previous_application_to_pivot_df= previous_application_df.drop(columns="id_prev")
     mask_no_final= previous_application_df["flag_last_application_for_the_contract"] == "N"
@@ -373,6 +395,8 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
     df_wide= df_wide.reset_index()
     previous_application_df["code_reject_reason"]= previous_application_df["code_reject_reason"].str.lower()
     previous_application_df = pd.get_dummies(previous_application_df, columns=[ "code_reject_reason"])
+    previous_application_df["name_contract_status"]= previous_application_df["name_contract_status"].str.lower()
+    previous_application_df = pd.get_dummies(previous_application_df, columns=[ "name_contract_status"])
 
     #we will calculate aggregations per client for differents tables so we will separate dictionaries per table
     agg_from_prev_app_dict= {
@@ -389,6 +413,7 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
         "log_total_interest_charged" : ["mean","std"],
         "instalments_completion_ratio" : ["mean","std"],
     
+        
 
         #for non transformated columns we want to catch the representative values and the acumulated
         "amt_credit": ["max", "min","median","sum"],
@@ -406,8 +431,13 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
         "rate_down_payment": ["max","mean","min","median","std"], #
         "ratio_credit_to_goods" : ["max","mean","median","min","std"], # 
         "ratio_credit_to_annuity" : ["max","mean","min","median","std"], #
-
         #categoricals
+        #"name_contract_status_approved": ["mean"],#"sum"
+        "name_contract_status_canceled": ["mean"],#,"sum"
+        "name_contract_status_refused": ["mean"],#,"sum"
+        #"name_contract_type_cash loans": ["mean", "sum"], 
+        #"name_contract_type_consumer loans": ["mean", "sum"],
+        #"name_contract_type_revolving loans": ["mean", "sum"], 
         "amt_annuity_and_cnt_payment_are_missing" :["mean","sum"],
         "amt_down_payment_is_missing" : ["mean","sum"],
         "nflag_insured_on_approval" : ["mean","sum"],
@@ -415,10 +445,12 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
         "amt_goods_price_is_missing" : ["mean","sum"],
         "rate_down_payment_is_missing" : ["mean","sum"],
 
+
         #counters
         "days_decision":["mean","min","max"],
         "cnt_payment":["mean","max","sum"]
     }
+
 
 
     agg_from_instalment_payment_dict= {
@@ -460,7 +492,24 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
         "credit_card_amt_balance_max" : ["max"],
     }
 
-    final_dict_for_agg= agg_from_prev_app_dict | agg_from_instalment_payment_dict | agg_from_credit_card_dict
+    agg_from_cash_balance_dict= {
+    "cash_balance_potentaily_on_going" : ["sum"],
+    "cash_balance_diff_expected_real_duration" : ["mean"],
+    "cash_balance_sk_dpd_mean"  : ["mean"],
+    "cash_balance_original_expected_duration" : ["max"],
+    "cash_balance_sk_dpd_def_mean" : ["mean"],
+    "cash_balance_factical_duration" : ["mean"],
+    "cash_balance_sk_dpd_tecnical_mean": ["mean"],
+    "cash_balance_sk_dpd_tecnical_sum": ["sum"],  
+    "cash_balance_sk_dpd_severe_mean": ["mean"], 
+    "cash_balance_sk_dpd_severe_sum": ["mean"], 
+    "cash_balance_dpd_def_tecnical_mean": ["mean"], 
+    "cash_balance_dpd_def_tecnical_sum": ["sum"], 
+    "cash_balance_dpd_def_severe_mean": ["mean"], 
+    "cash_balance_dpd_def_severe_sum": ["sum"], 
+    }
+
+    final_dict_for_agg= agg_from_prev_app_dict | agg_from_instalment_payment_dict | agg_from_credit_card_dict | agg_from_cash_balance_dict
 
 
     previous_application_df["log_amt_credit"] = np.log1p(previous_application_df["amt_credit"])
@@ -729,7 +778,6 @@ def process_application_train(input_filepath: Path, output_filepath: Path):
     cleaned_application_train["ext_2_x_3"] = cleaned_application_train["ext_source_2"] * cleaned_application_train["ext_source_3"]
     cleaned_application_train["ext_1_x_3"] = cleaned_application_train["ext_source_1"] * cleaned_application_train["ext_source_3"]
 
-    cleaned_application_train = pd.get_dummies(cleaned_application_train,columns=["organization_type"])
     cleaned_application_train = pd.get_dummies(cleaned_application_train,columns=["education_type"])
 
     ext_cols = ['ext_source_1', 'ext_source_2', 'ext_source_3']

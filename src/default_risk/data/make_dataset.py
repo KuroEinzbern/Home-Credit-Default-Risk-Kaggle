@@ -108,6 +108,7 @@ def main():
                 input_filepath=generate_process_paths("previous_application", split)[0],
                 installments_filepath=installments_base_out,
                 credit_card_filepath=credit_card_base_out,
+                POS_CASH_balance_filepath=cash_balance_base_out,
                 installments_time_window_filepath=installments_base_out.parent / f"{installments_base_out.stem}-temporal_window.parquet",
                 credit_card_time_window_filepath=credit_card_base_out.parent / f"{credit_card_base_out.stem}-last_six_months_agg.parquet",
                 cash_balance_time_window_filepath=cash_balance_base_out.parent / f"{cash_balance_base_out.stem}_time_window.parquet",

@@ -5,6 +5,7 @@ import default_risk.config as cfg
 import os
 import xgboost as xgb
 from dotenv import load_dotenv
+import argparse
 import joblib
 from contextlib import contextmanager
 from pathlib import Path
@@ -28,32 +29,54 @@ from default_risk.data.make_dataset import apply_cleaning
 
 
 
-def main():
-    pipeline= load_model(cfg.MODELS_DIR / "model-1.1.pkl")
+def main(args):
     test_application= pd.read_parquet(cfg.MASTER_DATA_DIR / "prepared_dataset_test.parquet")
     id_to_predict= test_application["id_curr"]
-    X_test= test_application.drop(columns= ["id_curr"])
+
+
+    if(args.only_xgb) :
+        default_proba= predict_with("xgb",test_application)
+        create_csv_with_predictions(id_to_predict,default_proba)
+        return
+    
+    if(args.only_lgbm) :
+        default_proba= predict_with("lgbm",test_application)
+        create_csv_with_predictions(id_to_predict,default_proba)
+        return
+    
+    if((args.all_models) or (any(vars(args).values()))) :
+        default_proba_xgb= predict_with("xgb",test_application)
+        default_proba_lgbm= predict_with("lgbm",test_application)
+        prediction_mean= (default_proba_xgb + default_proba_lgbm) / 2
+        create_csv_with_predictions(id_to_predict,prediction_mean)
+    
+
+
+def predict_with(model_name : str, applications_to_predict : pd.DataFrame):
+    pipeline= load_model(cfg.MODELS_DIR / f"model-{model_name}-1.1.pkl")
+    X_test= applications_to_predict.drop(columns= ["id_curr"])
     X_test = cast_object_into_categoricals(X_test)
     probas = pipeline.predict_proba(X_test)
-    default_predictions= probas[:, 1]
-    submision= pd.DataFrame({"SK_ID_CURR" : id_to_predict, "TARGET": default_predictions})
+    return probas[:, 1]
+
+
+
+def create_csv_with_predictions(id_to_predict, default_proba):
+    submision= pd.DataFrame({"SK_ID_CURR" : id_to_predict, "TARGET": default_proba})
     submision.to_csv(cfg.MASTER_DATA_DIR / "submision_kaggle.csv",index=False)
+    return
+    
         
 
-
-def build_data(df_aplications_to_predict : pd.DataFrame):
-    ids_to_predict= df_aplications_to_predict["SK_ID_CURR"]
-    cleaning_dict= get_cleaning_dict()
-    for table_name in cleaning_dict.keys() :
-        apply_cleaning(table_name,cleaning_dict,True,ids_to_predict)
-    return
 
 def load_model(input_path : str):
      return joblib.load(input_path)
    
 
-def inference(df_data_to_predict: pd.DataFrame):
-    return
 
-
-if __name__ == "__main__": main()
+if __name__ == "__main__": 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--only_xgb", help="only train xgb")
+    parser.add_argument("--only_lgbm", help="only train lgbm")
+    args = parser.parse_args()
+    main(args)

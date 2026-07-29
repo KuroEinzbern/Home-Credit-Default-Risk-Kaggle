@@ -20,6 +20,8 @@ import lightgbm as lgb
 import xgboost as xgb
 
 
+
+
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
 def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,silent: bool=False) -> None:
@@ -64,7 +66,7 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
                 #feature_permutation per fold
                 if enable_feature_permutation:
                     print(f"Calculando PFI para el Fold {fold}...")
-                    res_pfi = permutation_importance(model, x_val, y_val, scoring='roc_auc', n_repeats=5, n_jobs=-1, random_state=42)
+                    res_pfi = permutation_importance(model, x_val, y_val, scoring='roc_auc', n_repeats=5, n_jobs=8, random_state=42)
                     column_name_importance= f'importance_fold_{fold}'
                     pfi_df = pd.DataFrame({'feature': X.columns, column_name_importance: res_pfi.importances_mean})
                     pfi_folds_list.append(pfi_df)
@@ -89,11 +91,8 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
             predict_input_sample= final_model.predict(input_sample)
             signature= infer_signature(input_sample,predict_input_sample)
             mlflow.sklearn.log_model(final_model, "final_model",signature=signature)
-        
             save_feature_importance(final_model,X,run_name)
                 
-
-    
     return oof_auc_score, standar_deviation
 
 def persist_and_export_feature_permutation(pfi_folds_list: list, run_name : str)-> None:
