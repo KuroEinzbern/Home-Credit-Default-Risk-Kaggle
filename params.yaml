@@ -17,6 +17,7 @@ xgboost:
     n_estimators: 3303
   target_encoding_smoothing: 50
   features:
+    -avg_annuity_vs_actual_annuity
     - bureau_balance_is_delincuency_sum_loan_1
     - closed_days_credit_update_closed_max
     - instalments_completion_ratio_mean
@@ -151,7 +152,8 @@ lgbm:
     force_col_wise: true
     importance_type: 'gain'
   target_encoding_smoothing: 2.5821099004254604
-  features:
+  features:    
+  - avg_annuity_vs_actual_annuity
   - credit_card_cnt_drawings_current_max_prev_1
   - active_credit_type_mortgage_active_mean
   - ext_source_1

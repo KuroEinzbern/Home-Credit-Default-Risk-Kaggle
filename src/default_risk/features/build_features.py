@@ -50,6 +50,9 @@ def main():
 
         merged_df["instalment_income_ratio"] = np.where(merged_df["amt_income_total"],merged_df["instalments_amt_instalment_sum_sum"] / merged_df["amt_income_total"],np.nan)
 
+        merged_df["avg_annuity_vs_actual_annuity"] = np.where(merged_df["amt_annuity"],merged_df["amt_annuity_median"] / merged_df["amt_annuity"],np.nan)
+
+
         
       
         merged_df.to_parquet(MASTER_DATA_DIR / f'prepared_dataset_{split}.parquet')
