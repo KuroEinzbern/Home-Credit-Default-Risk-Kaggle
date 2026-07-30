@@ -28,6 +28,7 @@ def apply_cyclical_encoding(df, column, max_val) -> pd.DataFrame:
 def prepare_columns(df : pd.DataFrame, columns_to_drop : list=["id_curr"], target_name : str ="target", santize_text : bool = False)  -> tuple[ pd.DataFrame, pd.Series] :
     Y= df[target_name]
     X= df.drop(columns=[target_name])
+    X.columns = X.columns.str.replace(" ", "_")
     if(santize_text):
         X = X.rename(
         columns=lambda c: re.sub(r'[^A-Za-z0-9_]', '_', c))

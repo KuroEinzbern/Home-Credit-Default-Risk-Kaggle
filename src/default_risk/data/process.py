@@ -363,7 +363,7 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
 
 
 
-def process_previous_application(input_filepath: Path, installments_filepath: Path, credit_card_filepath: Path, cash_balance_filepath: Path, installments_time_window_filepath: Path, credit_card_time_window_filepath: Path, cash_balance_time_window_filepath: Path, output_filepath: Path):
+def process_previous_application(input_filepath: Path, installments_filepath: Path, credit_card_filepath: Path, POS_CASH_balance_filepath: Path, installments_time_window_filepath: Path, credit_card_time_window_filepath: Path, cash_balance_time_window_filepath: Path, output_filepath: Path):
     previous_application_df = pd.read_parquet(cfg.CLEANS_DIR / input_filepath)
     #creating columns before aggregation
     previous_application_df["diff_application_credit"] = previous_application_df["amt_application"] - previous_application_df["amt_credit"]
@@ -372,9 +372,12 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
     previous_application_df["implied_interest_rate"] = (previous_application_df["amt_annuity"] * previous_application_df["cnt_payment"]) / previous_application_df["amt_credit"].replace(0, np.nan)
     previous_application_df["ratio_credit_to_annuity"]= previous_application_df["amt_credit"] / (previous_application_df["amt_annuity"].replace(0,np.nan))
 
+    print(f"path de installments = {installments_filepath}")
     instalament_df = pd.read_parquet(installments_filepath)
+    print(f"path de credit_card = {credit_card_filepath}")
     credit_card_df = pd.read_parquet(credit_card_filepath)
-    cash_balance_df = pd.read_parquet(cash_balance_filepath)
+    print(f"path de cash_balance = {POS_CASH_balance_filepath}")
+    cash_balance_df = pd.read_parquet(POS_CASH_balance_filepath)
 
     previous_application_df= previous_application_df.merge(instalament_df,how="left",on= "id_prev")
     previous_application_df= previous_application_df.merge(credit_card_df,how="left",on= "id_prev")
@@ -493,7 +496,7 @@ def process_previous_application(input_filepath: Path, installments_filepath: Pa
     }
 
     agg_from_cash_balance_dict= {
-    "cash_balance_potentaily_on_going" : ["sum"],
+    #"cash_balance_potentaily_on_going" : ["sum"],
     "cash_balance_diff_expected_real_duration" : ["mean"],
     "cash_balance_sk_dpd_mean"  : ["mean"],
     "cash_balance_original_expected_duration" : ["max"],

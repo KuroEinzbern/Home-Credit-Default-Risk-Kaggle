@@ -14,6 +14,8 @@ from functools import singledispatch
 from typing import Any
 import argparse
 from collections.abc import Callable
+import re
+
 
 
 
@@ -35,22 +37,27 @@ def load_params(param_name)-> dict:
     
 
 def instance_xgb() -> tuple[BaseEstimator,  dict[str, Any]]: 
-    hiperparams = load_params("xgboost")
-    print(hiperparams)
-    model= xgb.XGBClassifier(**hiperparams)
-    return model , hiperparams
+    settings = load_params("xgboost")
+    features= settings["features"]
+    hyperparams = settings["hyperparams"]
+    smoothing = settings["target_encoding_smoothing"]
+    model= xgb.XGBClassifier(**hyperparams)
+    return model, hyperparams, smoothing,  features
 
 
 
 def instance_lgbm() -> tuple[BaseEstimator,  dict[str, Any]]: 
-    hiperparams = load_params("lgbm")
-    model= lgb.LGBMClassifier(**hiperparams)
-    return model , hiperparams 
+    settings = load_params("lgbm")
+    features= settings["features"]
+    hyperparams = settings["hyperparams"]
+    smoothing = settings["target_encoding_smoothing"]
+    model= lgb.LGBMClassifier(**hyperparams)
+    return model, hyperparams, smoothing,  features
 
 
 procesing_dict: dict[str, Callable] = {
-    "lgbm": instance_xgb,
-    "xgb": instance_lgbm,
+    "lgbm": instance_lgbm, 
+    "xgb": instance_xgb,
 }
 
 
@@ -79,26 +86,26 @@ def train_model(model_class) :
 
     dataset = pd.read_parquet(cfg.MASTER_DATA_DIR / 'prepared_dataset_train.parquet')
 
-    if(model_class == "lgbm") : sanitize= True
-    if(model_class == "xgb") : sanitize= False
 
-    X,Y = prepare_columns(dataset,santize_text=sanitize)
+    X,Y = prepare_columns(dataset,santize_text=True)
     X = cast_object_into_categoricals(X)
     categorical_features= ["organization_type","occupation_type"]
 
-
     factory = procesing_dict[model_class]
-    instanced_model , hiperparams = factory()
-    pipeline= get_pipeline(50,categorical_features, instanced_model)
 
+    instanced_model, hiperparams, smoothing, features = factory()
 
-    features = hiperparams["features"]
+    print (features)
+
+    features = [re.sub(r'[^A-Za-z0-9_]', '_', c) for c in features]
+
     X= X[features]
 
+    pipeline= get_pipeline(smoothing,categorical_features, instanced_model)
 
     run_cv_tracked_mlflow(pipeline,hiperparams,cv,X,Y,experiment_name,"Pipeline-1.0")
     pipeline.fit(X,Y)
-    joblib.dump(pipeline, cfg.MODELS_DIR /f'model-{model_class.__name__}-1.1.pkl')
+    joblib.dump(pipeline, cfg.MODELS_DIR /f'model-{model_class}-1.1.pkl')
     return
 
 

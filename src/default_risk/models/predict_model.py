@@ -14,6 +14,7 @@ from default_risk.config import CLEANS_DIR, DATA_DIR, PROCESSED_DIR, RAW_DATA_DI
 from default_risk.data.clean import clean_bureau, clean_credit_card_balance, clean_installments_payments, clean_pos_cash_balance, clean_previous_application, clean_application_train,clean_bureau_balance
 from default_risk.data.extract import download_dataset, split_dataset, canonizate
 from collections.abc import Callable
+import re
 
 
 
@@ -55,6 +56,7 @@ def main(args):
 def predict_with(model_name : str, applications_to_predict : pd.DataFrame):
     pipeline= load_model(cfg.MODELS_DIR / f"model-{model_name}-1.1.pkl")
     X_test= applications_to_predict.drop(columns= ["id_curr"])
+    X_test= X_test.rename(columns=lambda c: re.sub(r'[^A-Za-z0-9_]', '_', c))
     X_test = cast_object_into_categoricals(X_test)
     probas = pipeline.predict_proba(X_test)
     return probas[:, 1]
@@ -78,5 +80,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--only_xgb", help="only train xgb")
     parser.add_argument("--only_lgbm", help="only train lgbm")
+    parser.add_argument("--all_models", help="prediction is a mean of the predictions of all the models")
     args = parser.parse_args()
     main(args)

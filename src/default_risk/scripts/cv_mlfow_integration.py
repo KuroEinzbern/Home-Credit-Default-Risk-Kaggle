@@ -117,7 +117,7 @@ def save_feature_importance(trained_model, X: pd.DataFrame, run_name: str) -> No
     df_feature_importance=pd.DataFrame()
     #features_names= X.columns
     trained_model= extract_final_model(trained_model)
-    features_names_raw = get_the_features_name(X,train_the_model)
+    features_names_raw = get_the_features_name(trained_model,X)
     features_names_clean = [col.replace('remainder__', '').replace('target_encode_cat__', '') for col in features_names_raw]
     importances= trained_model.feature_importances_
     df_feature_importance["feature_name"] = features_names_clean
@@ -147,18 +147,18 @@ def _(model: BaseEstimator) :
 
 
 @singledispatch
-def get_the_features_name(X, model) -> BaseEstimator: 
+def get_the_features_name(model,X ) -> BaseEstimator: 
     print("unknow type in the model")
     return X.columns
 
 
 @get_the_features_name.register
-def _(X, model: lgb.LGBMClassifier) :
+def _(model: lgb.LGBMClassifier, X) :
     return model.booster_.feature_name()
 
 
 @get_the_features_name.register
-def _(X, model: xgb.XGBClassifier) :
+def _(model: xgb.XGBClassifier,X) :
     return model.feature_names_in_
 
 

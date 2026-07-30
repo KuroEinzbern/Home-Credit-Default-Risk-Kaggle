@@ -15,6 +15,7 @@ xgboost:
     gamma: 0.005256096346437929
     max_depth: 7
     n_estimators: 3303
+  target_encoding_smoothing: 50
   features:
     - bureau_balance_is_delincuency_sum_loan_1
     - closed_days_credit_update_closed_max
@@ -62,9 +63,8 @@ xgboost:
     - closed_amt_credit_sum_debt_closed_std
     - ext_source_1
     - ratio_credit_to_goods_mean
-    - organization_type_Bank
+    - organization_type
     - last_6_credit_card_balance_limit_ratio_max
-    - organization_type_Construction
     - ratio_days_employed_days_lived
     - last_6_cash_balance_sk_dpd_def_sum
     - amt_req_credit_breau_day
@@ -85,7 +85,7 @@ xgboost:
     - last_6_cash_balance_amount_advanced_payment_max
     - def_30_cnt_social_circle
     - flag_own_realty
-    - education_type_Higher education
+    - education_type_Higher_education
     - ratio_debt_age
     - documents_count
     - family_status
@@ -95,7 +95,6 @@ xgboost:
     - region_raiting_client
     - amt_req_credit_breau_qrt
     - ext_1_x_3
-    - organization_type_Transport: type 3
     - diff_application_credit_max
     - active_days_credit_enddate_active_mean
     - instalments_is_delinquency_mean_mean
@@ -113,13 +112,11 @@ xgboost:
     - last_365_instalments_completion_ratio
     - instalments_amt_payment_sum_sum
     - days_id_publish
-    - organization_type_Self-employed
     - credit_card_cnt_drawings_atm_current_mean_mean
     - instalments_days_of_delinquency_mean_prev_1
     - name_seller_industry_prev_1
     - last_90_instalments_completion_ratio
     - ext_source_mean
-    - organization_type_Military
     - bureau_days_credit_enddate_loan_1
     - flag_not_live_city
     - instalments_days_of_underpayment_max_max
@@ -134,145 +131,146 @@ xgboost:
 
 lgbm:
   hyperparams:
-    n_estimators: 2086
-    learning_rate: 0.010061666728286038
-    num_leaves: 68
-    min_child_samples: 151
+    n_estimators: 4693
+    learning_rate: 0.007553343326775532
+    num_leaves: 37
+    min_child_samples: 220
+    min_child_weight: 0.0028908609938903796
     max_depth: -1
-    subsample: 0.8664564642957002
-    colsample_bytree: 0.6347840589896324
-    reg_alpha: 4.905930240549411
-    reg_lambda: 0.006830459057401382
-    min_split_gain: 0.25616917560909797
-    min_child_weight: 0.010819305760005674
+    subsample: 0.8389118020044092
+    subsample_freq: 3
+    colsample_bytree: 0.5616610992553818
+    reg_alpha: 2.24385145804699e-07
+    reg_lambda: 7.747405452353306
+    min_split_gain: 0.786374413940256
     random_state: 42
+    cat_smooth: 7.237675739015409
+    cat_l2: 75.34738775153713
     n_jobs: -1
-    objective: binary
+    objective: 'binary'
     force_col_wise: true
-    importance_type: gain
+    importance_type: 'gain'
+  target_encoding_smoothing: 2.5821099004254604
   features:
   - credit_card_cnt_drawings_current_max_prev_1
-  - name_type_suite_prev_1
-  - amt_req_credit_breau_qrtcd
   - active_credit_type_mortgage_active_mean
+  - ext_source_1
   - instalments_amount_of_versions_in_sequence_max
-  - code_reject_reason_prev_1
-  - bureau_credit_type_loan_1
-  - organization_type
   - active_credit_type_microloan_active_mean
-  - last_6_cash_balance_amount_advanced_payment_sum
   - name_contract_status_canceled_mean
-  - rate_down_payment_prev_1
-  - family_status
+  - def_30_cnt_social_circle
+  - last_6_cash_balance_amount_advanced_payment_sum
+  - documents_count
   - instalments_is_delinquency_sum_sum
   - closed_id_curr_closed_count
+  - education_type_Secondary / secondary special
   - last_6_credit_card_desesperation_ratio_mean
-  - documents_count
-  - flag_document_3
-  - instalments_extra_instalament_mean_mean
   - active_amt_credit_max_overdue_active_sum
-  - active_id_curr_active_count
+  - amt_req_credit_breau_qrt
+  - amt_goods_price
+  - days_employed
   - active_credit_type_consumer_credit_active_sum
   - closed_balance_is_delincuency_mean_closed_mean
-  - wallsmaterial_mode
-  - bureau_amt_credit_max_overdue_loan_1
-  - def_30_cnt_social_circle
+  - instalments_extra_instalament_mean_mean
+  - days_last_phone_change
+  - active_id_curr_active_count
+  - amt_annuity
+  - bureau_amt_credit_sum_loan_1
+  - active_amt_credit_max_overdue_active_max
   - credit_card_amt_balance_max_max
   - last_90_instalments_completion_ratio
-  - active_amt_credit_max_overdue_active_max
+  - credit_card_is_over_the_limit_mean_mean
+  - organization_type
   - last_365_instalments_completion_ratio
   - instalments_log_amt_instalment_std_prev_1
-  - flag_not_live_city
-  - credit_card_is_over_the_limit_mean_mean
-  - days_birth
-  - cash_balance_sk_dpd_def_mean_mean
   - active_amt_credit_sum_debt_active_sum
+  - cash_balance_sk_dpd_def_mean_mean
   - active_log_amt_credit_sum_active_mean
   - closed_amt_credit_max_overdue_closed_mean
   - active_log_amt_credit_sum_active_std
   - days_decision_spread
   - instalments_log_amt_payment_std_prev_1
   - total_interest_charged_max
-  - active_amt_credit_sum_active_max
-  - bureau_days_credit_enddate_first_cluster_values_loan_1
-  - active_days_credit_enddate_active_max
-  - ratio_debt_income
-  - last_365_instalments_is_delinquency_mean
-  - closed_days_enddate_fact_closed_max
-  - active_amt_credit_sum_active_sum
-  - amt_goods_price
-  - closed_amt_credit_sum_closed_mean
   - instalments_days_of_delinquency_mean_prev_1
-  - instalments_days_in_advance_max_max
-  - instalments_completion_ratio_mean
-  - instalments_amt_instalment_sum_sum
+  - last_365_instalments_is_delinquency_mean
+  - ratio_debt_age
+  - active_amt_credit_sum_active_max
+  - closed_days_enddate_fact_closed_max
+  - education_type_Higher_education
   - last_6_credit_card_completion_ratio
-  - active_days_credit_active_max
-  - days_employed
-  - closed_days_credit_update_closed_max
+  - bureau_amt_credit_max_overdue_loan_1
+  - instalments_completion_ratio_mean
+  - active_amt_credit_sum_active_sum
+  - active_days_credit_enddate_active_max
+  - family_status
+  - instalments_amt_instalment_sum_sum
   - bureau_amt_credit_sum_debt_loan_1
-  - bureau_amt_credit_sum_loan_1
-  - closed_days_credit_closed_max
+  - closed_days_credit_update_closed_max
+  - instalments_days_in_advance_max_max
+  - bureau_credit_type_loan_1
+  - active_days_credit_active_max
+  - flag_document_3
   - amt_annuity_median
-  - days_decision_prev_1
   - credit_card_cnt_drawings_atm_current_mean_mean
   - closed_amt_credit_sum_closed_std
-  - days_last_phone_change
   - log_amt_annuity_mean
-  - own_car_age
   - ratio_credit_to_goods_min
   - active_days_credit_active_mean
-  - bureau_days_credit_loan_1
-  - ext_1_x_3
-  - bureau_days_credit_enddate_loan_1
-  - log_amt_annuity_std
-  - active_days_credit_enddate_active_mean
+  - days_registration
   - last_6_cash_balance_count_instalment_future_min
-  - bureau_completetitud_ratio_loan_1
-  - instalments_amt_payment_sum_max
-  - days_decision_min
-  - days_decision_mean
-  - education_type
-  - instalments_days_of_delinquency_mean_mean
-  - ratio_debt_age
-  - instalments_days_of_underpayment_max_max
-  - amt_down_payment_sum
-  - ratio_days_employed_days_lived
-  - amt_annuity
-  - ratio_annuity_income
-  - closed_amt_credit_sum_closed_sum
-  - region_population
+  - bureau_days_credit_enddate_loan_1
+  - closed_days_credit_closed_max
+  - closed_amt_credit_sum_closed_mean
+  - days_decision_prev_1
+  - bureau_days_credit_enddate_first_cluster_values_loan_1
+  - active_days_credit_enddate_active_mean
   - occupation_type
+  - product_combination_prev_1
+  - log_amt_annuity_std
+  - bureau_completetitud_ratio_loan_1
+  - instalments_days_of_delinquency_mean_mean
+  - days_birth
+  - days_decision_min
+  - instalments_amt_payment_sum_max
+  - days_decision_mean
+  - ratio_days_employed_days_lived
+  - name_income_type
+  - amt_down_payment_sum
+  - instalments_days_of_underpayment_max_max
+  - credit_duration
+  - kui_ratio
   - last_90_instalments_amt_instalment_min
+  - closed_amt_credit_sum_closed_sum
+  - flag_not_live_city
   - region_raiting_client_city
-  - implied_interest_rate_mean
   - implied_interest_rate_std
-  - name_contract_status_refused_mean
+  - implied_interest_rate_mean
+  - ext_source_mean
   - instalment_income_ratio
-  - instalments_amt_payment_sum_sum
+  - name_contract_status_refused_mean
   - instalments_is_delinquency_mean_mean
+  - ext_2_x_3
   - ratio_credit_to_goods_mean
-  - days_id_publish
-  - ext_source_1
+  - instalments_amt_payment_sum_sum
   - amt_credit
   - code_gender
-  - ext_1_x_2
-  - last_6_cash_balance_count_instalment_future_max
   - last_365_instalments_days_of_delinquency_mean
-  - name_income_type
-  - active_completetitud_ratio_active_mean
-  - kui_ratio
-  - last_6_credit_card_balance_limit_ratio_max
-  - days_registration
-  - implied_interest_rate_max
-  - ratio_good_credit
-  - product_combination_prev_1
   - ext_source_2
+  - region_population
+  - last_6_cash_balance_count_instalment_future_max
+  - own_car_age
+  - active_completetitud_ratio_active_mean
+  - last_6_credit_card_balance_limit_ratio_max
+  - ratio_good_credit
+  - days_id_publish
+  - ratio_annuity_income
+  - implied_interest_rate_max
   - active_completetitud_ratio_active_min
+  - wallsmaterial_mode
   - ext_source_3
-  - credit_duration
-  - ext_2_x_3
-  - ext_source_mean
+  - ext_1_x_2
+  - ext_1_x_3
+  - bureau_days_credit_loan_1
 
 
 
