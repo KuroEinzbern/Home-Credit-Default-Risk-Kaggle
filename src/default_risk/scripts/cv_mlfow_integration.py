@@ -78,6 +78,8 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
         oof_auc_score = roc_auc_score(Y,oof_auc_prob)
         mlflow.log_metric("oof_auc",oof_auc_score)
 
+        persist_and_export_oof_predictions(oof_auc_prob, Y.index, parent_name)
+
         #create the csv and artifact for ml_flow.
         if enable_feature_permutation :
             persist_and_export_feature_permutation(pfi_folds_list,run_name)
@@ -92,7 +94,7 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
             signature= infer_signature(input_sample,predict_input_sample)
             mlflow.sklearn.log_model(final_model, "final_model",signature=signature)
             save_feature_importance(final_model,X,run_name)
-                
+
     return oof_auc_score, standar_deviation
 
 def persist_and_export_feature_permutation(pfi_folds_list: list, run_name : str)-> None:
@@ -112,6 +114,12 @@ def persist_and_export_feature_importance(feature_importance_df: pd.DataFrame, r
     mlflow.log_artifact(file_path)
     return
 
+def persist_and_export_oof_predictions(oof_preds: np.ndarray, index: pd.Index, run_name: str) -> None:
+    oof_df = pd.DataFrame({"oof_prediction": oof_preds}, index=index)
+    file_path = str(cfg.ARTIFACTS_DIR / f"{run_name}_oof_predictions.csv")
+    oof_df.to_csv(file_path, index=True)
+    mlflow.log_artifact(file_path)
+    return
 
 def save_feature_importance(trained_model, X: pd.DataFrame, run_name: str) -> None:
     df_feature_importance=pd.DataFrame()
