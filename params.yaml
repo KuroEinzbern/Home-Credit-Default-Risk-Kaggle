@@ -5,19 +5,19 @@ xgboost:
     eval_metric: auc
     enable_categorical: true
     n_jobs: -1
-    grow_policy: depthwise
-    learning_rate: 0.01092020297746539
-    subsample: 0.939054713428561
-    colsample_bytree: 0.25301401248202016
-    colsample_bynode: 0.838800785891248
-    min_child_weight: 58.734941284581375
-    reg_lambda: 0.011251585848534765
-    gamma: 0.005256096346437929
-    max_depth: 7
-    n_estimators: 3303
+    grow_policy: lossguide
+    learning_rate: 0.01184506423565172
+    subsample: 0.9843350621400545
+    colsample_bytree: 0.23379345015134234
+    colsample_bynode: 0.9101617347853203
+    min_child_weight: 66.21019772018973
+    reg_lambda: 0.02222906905676631
+    gamma: 0.7622597484090166
+    max_leaves: 48
+    n_estimators: 3063
   target_encoding_smoothing: 50
   features:
-    -avg_annuity_vs_actual_annuity
+    - avg_annuity_vs_actual_annuity
     - bureau_balance_is_delincuency_sum_loan_1
     - closed_days_credit_update_closed_max
     - instalments_completion_ratio_mean
