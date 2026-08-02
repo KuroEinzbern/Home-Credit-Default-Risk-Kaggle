@@ -89,7 +89,7 @@ def train_model(model_class) :
 
     X,Y = prepare_columns(dataset,santize_text=True)
     X = cast_object_into_categoricals(X)
-    categorical_features= ["organization_type","occupation_type"]
+    categorical_features= ["organization_type","occupation_type","bureau_credit_type_loan_1","wallsmaterial_mode"]
 
     factory = procesing_dict[model_class]
 

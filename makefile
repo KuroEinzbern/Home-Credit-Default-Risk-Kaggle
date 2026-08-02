@@ -10,7 +10,7 @@ FLAGS ?=
 
 install:
 	python -m venv venv
-	@echo "Instalando dependencias y el paquete en modo editable..."
+	@echo "installing dependencies and the project in editable mode..."
 	pip install -r requirements.txt
 	pip install -e .
 
@@ -20,7 +20,7 @@ docker_up:
 docker_down:
 	docker compose down
 
-setup: venv docker-up
+setup: install docker-up
 
 data:
 	python src/default_risk/data/make_dataset.py $(FLAGS)

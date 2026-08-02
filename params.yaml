@@ -129,6 +129,8 @@ xgboost:
     - bureau_completetitud_ratio_loan_1
     - amt_goods_price
     - instalments_days_of_delinquency_mean_mean
+  categorical_features:
+    -
 
 lgbm:
   hyperparams:
