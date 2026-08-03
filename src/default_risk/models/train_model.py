@@ -38,21 +38,17 @@ def load_params(param_name)-> dict:
 
 def instance_xgb() -> tuple[BaseEstimator,  dict[str, Any]]: 
     settings = load_params("xgboost")
-    features= settings["features"]
-    hyperparams = settings["hyperparams"]
-    smoothing = settings["target_encoding_smoothing"]
+    hyperparams = settings.pop("hyperparams")
     model= xgb.XGBClassifier(**hyperparams)
-    return model, hyperparams, smoothing,  features
+    return model, hyperparams, settings
 
 
 
 def instance_lgbm() -> tuple[BaseEstimator,  dict[str, Any]]: 
     settings = load_params("lgbm")
-    features= settings["features"]
-    hyperparams = settings["hyperparams"]
-    smoothing = settings["target_encoding_smoothing"]
+    hyperparams = settings.pop("hyperparams")
     model= lgb.LGBMClassifier(**hyperparams)
-    return model, hyperparams, smoothing,  features
+    return model, hyperparams, settings
 
 
 procesing_dict: dict[str, Callable] = {
@@ -89,11 +85,16 @@ def train_model(model_class) :
 
     X,Y = prepare_columns(dataset,santize_text=True)
     X = cast_object_into_categoricals(X)
-    categorical_features= ["organization_type","occupation_type","bureau_credit_type_loan_1","wallsmaterial_mode"]
 
     factory = procesing_dict[model_class]
 
-    instanced_model, hiperparams, smoothing, features = factory()
+    instanced_model, hyperparams, settings_dict = factory()
+
+    smoothing= settings_dict["target_encoding_smoothing"]
+
+    features= settings_dict["features"]
+
+    categorical_features=settings_dict["categorical_features"]
 
     print (features)
 
@@ -101,11 +102,12 @@ def train_model(model_class) :
 
     X= X[features]
 
-    pipeline= get_pipeline(smoothing,categorical_features, instanced_model)
+    pipeline= get_pipeline(smoothing, categorical_features, instanced_model)
+    run_cv_tracked_mlflow(pipeline,hyperparams,cv,X,Y,experiment_name,f"Pipeline_{model_class}-1.1")
 
-    run_cv_tracked_mlflow(pipeline,hiperparams,cv,X,Y,experiment_name,f"Pipeline_{model_class}-1.1")
     pipeline.fit(X,Y)
     joblib.dump(pipeline, cfg.MODELS_DIR /f'model-{model_class}-1.1.pkl')
+
     return
 
 
