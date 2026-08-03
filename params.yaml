@@ -129,9 +129,12 @@ xgboost:
     - bureau_completetitud_ratio_loan_1
     - amt_goods_price
     - instalments_days_of_delinquency_mean_mean
+    - antique_annuity_vs_actual_annuity
+    - instalment_income_ratio
   categorical_features:
-    -
-
+    -organization_type
+    -occupation_type
+ 
 lgbm:
   hyperparams:
     n_estimators: 4693
@@ -275,6 +278,14 @@ lgbm:
   - ext_1_x_2
   - ext_1_x_3
   - bureau_days_credit_loan_1
+  - antique_annuity_vs_actual_annuity
+  
+  categorical_features: 
+    -organization_type
+    -occupation_type
+    -bureau_credit_type_loan_1
+    -wallsmaterial_mode
+
 
 
 
