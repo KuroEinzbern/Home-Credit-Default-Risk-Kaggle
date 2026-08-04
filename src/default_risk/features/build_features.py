@@ -52,9 +52,10 @@ def main():
 
         merged_df["avg_annuity_vs_actual_annuity"] = np.where(merged_df["amt_annuity"],merged_df["amt_annuity_median"] / merged_df["amt_annuity"],np.nan)
 
+        merged_df["kui_external"] =  np.where(merged_df["days_employed"] != 0, merged_df["active_amt_credit_sum_debt_active_sum"] / ((merged_df["days_employed"] * -1) * merged_df["amt_income_total"]), 0)
 
+        merged_df["ratio_of_payment_external_debt"] = np.where(merged_df["active_amt_credit_sum_debt_active_sum"] != 0, merged_df["active_amt_credit_sum_active_sum"] / merged_df["active_amt_credit_sum_debt_active_sum"],np.nan)
         
-      
         merged_df.to_parquet(MASTER_DATA_DIR / f'prepared_dataset_{split}.parquet')
 
 

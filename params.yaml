@@ -129,7 +129,6 @@ xgboost:
     - bureau_completetitud_ratio_loan_1
     - amt_goods_price
     - instalments_days_of_delinquency_mean_mean
-    - antique_annuity_vs_actual_annuity
     - instalment_income_ratio
   categorical_features:
     -organization_type
@@ -137,27 +136,29 @@ xgboost:
  
 lgbm:
   hyperparams:
-    n_estimators: 4693
-    learning_rate: 0.007553343326775532
-    num_leaves: 37
-    min_child_samples: 220
-    min_child_weight: 0.0028908609938903796
+    n_estimators: 4854
+    learning_rate: 0.00587633931427308
+    num_leaves: 40
+    min_child_samples: 77
+    min_child_weight: 0.0010075425502278205
     max_depth: -1
-    subsample: 0.8389118020044092
-    subsample_freq: 3
-    colsample_bytree: 0.5616610992553818
-    reg_alpha: 2.24385145804699e-07
-    reg_lambda: 7.747405452353306
-    min_split_gain: 0.786374413940256
+    subsample: 0.8379685394911657
+    subsample_freq: 5
+    colsample_bytree: 0.5007314038467754
+    reg_alpha: 5.874001031590365
+    reg_lambda: 2.473060711126495
+    min_split_gain: 0.41384599131751537
     random_state: 42
-    cat_smooth: 7.237675739015409
-    cat_l2: 75.34738775153713
+    cat_smooth: 91.59649623757437
+    cat_l2: 28.173404262475664
     n_jobs: -1
     objective: 'binary'
     force_col_wise: true
     importance_type: 'gain'
   target_encoding_smoothing: 2.5821099004254604
   features:    
+  - kui_external
+  - ratio_of_payment_external_debt
   - avg_annuity_vs_actual_annuity
   - credit_card_cnt_drawings_current_max_prev_1
   - active_credit_type_mortgage_active_mean
@@ -278,12 +279,10 @@ lgbm:
   - ext_1_x_2
   - ext_1_x_3
   - bureau_days_credit_loan_1
-  - antique_annuity_vs_actual_annuity
   
   categorical_features: 
     -organization_type
     -occupation_type
-    -bureau_credit_type_loan_1
     -wallsmaterial_mode
 
 
