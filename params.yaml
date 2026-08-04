@@ -131,9 +131,9 @@ xgboost:
     - instalments_days_of_delinquency_mean_mean
     - instalment_income_ratio
   categorical_features:
-    -organization_type
-    -occupation_type
- 
+    - organization_type
+    - occupation_type
+
 lgbm:
   hyperparams:
     n_estimators: 4854
@@ -281,9 +281,9 @@ lgbm:
   - bureau_days_credit_loan_1
   
   categorical_features: 
-    -organization_type
-    -occupation_type
-    -wallsmaterial_mode
+    - organization_type
+    - occupation_type
+    - wallsmaterial_mode
 
 
 
