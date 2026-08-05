@@ -79,6 +79,9 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
     bureau_df["credit_active"]=bureau_df["credit_active"].str.lower()
     bureau_df= pd.get_dummies(bureau_df, columns=["credit_active"], dtype=int)
 
+    bureau_df["log_amt_credit_sum"] = np.log1p(bureau_df["amt_credit_sum"])
+
+
     bureau_df.sort_values(["id_curr", "days_credit"],inplace=True,ascending=False)
     last_two = bureau_df.groupby("id_curr").head(1)
     last_two = last_two.copy()
@@ -89,7 +92,6 @@ def process_bureau(input_filepath: Path, output_filepath: Path, bureau_balance_a
     last_two_columns.columns = [f"bureau_{col[0]}_loan_{col[1]}" for col in last_two_columns.columns]
     last_two_columns= last_two_columns.reset_index()
 
-    bureau_df["log_amt_credit_sum"] = np.log1p(bureau_df["amt_credit_sum"])
 
     bureau_df["credit_type"]= bureau_df["credit_type"].str.lower()
     bureau_df= pd.get_dummies(bureau_df,columns= ["credit_type"])
@@ -327,6 +329,8 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
 
     agg_metrics_last_three_months= get_time_window_metrics(-90, installments_payment_df)
     agg_metrics_last_year = get_time_window_metrics(-365, installments_payment_df)
+    last_two_years = get_time_window_metrics(-720, installments_payment_df)
+
 
     temporal_windows_df = agg_metrics_last_year.merge(
         agg_metrics_last_three_months, 
@@ -334,23 +338,35 @@ def process_installments_payments(input_filepath: Path, output_filepath: Path):
         how="outer",  
     )
 
+    temporal_windows_df = temporal_windows_df.merge(
+            last_two_years, 
+            on="id_curr", 
+            how="outer",  
+        )
+
     temporal_windows_df["payment_trend"] = np.where(temporal_windows_df["last_90_instalments_completion_ratio"] != 0 , temporal_windows_df["last_365_instalments_completion_ratio"] / temporal_windows_df["last_90_instalments_completion_ratio"],np.nan)
-    temporal_windows_df["delincuency_trend"] = temporal_windows_df["last_365_instalments_days_of_delinquency_mean"] - temporal_windows_df["last_90_instalments_days_of_delinquency_mean"] 
-    temporal_windows_df["underpayment_trend"] = temporal_windows_df["last_365_instalments_is_underpayment_mean"] - temporal_windows_df["last_90_instalments_is_underpayment_mean"]
+    temporal_windows_df["delincuency_trend"] = np.where(temporal_windows_df["last_365_instalments_days_of_delinquency_mean"] != 0 , temporal_windows_df["last_720_instalments_days_of_delinquency_mean"] / temporal_windows_df["last_365_instalments_days_of_delinquency_mean"],np.nan)
+    #temporal_windows_df["underpayment_trend"] = np.where(temporal_windows_df["last_365_instalments_is_underpayment_mean"] != 0 , temporal_windows_df["last_720_instalments_is_underpayment_mean"] / temporal_windows_df["last_365_instalments_is_underpayment_mean"],np.nan)
+
+
+
 
     temporal_windows_df_to_save=pd.DataFrame()
-    #temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_mean"]= temporal_windows_df["last_365_instalments_days_of_delinquency_mean"]
-    #temporal_windows_df_to_save["delincuency_trend"] = temporal_windows_df["delincuency_trend"]
+    temporal_windows_df_to_save["last_720_instalments_days_of_delinquency_mean"] =  temporal_windows_df["last_720_instalments_days_of_delinquency_mean"] 
     temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_sum"]= temporal_windows_df["last_365_instalments_days_of_delinquency_sum"]
     temporal_windows_df_to_save["last_365_instalments_days_of_delinquency_mean"]= temporal_windows_df["last_365_instalments_days_of_delinquency_mean"]
     temporal_windows_df_to_save["last_365_instalments_extra_instalament_mean"]= temporal_windows_df["last_365_instalments_extra_instalament_mean"]
     temporal_windows_df_to_save["last_365_instalments_amt_payment_min"]= temporal_windows_df["last_365_instalments_amt_payment_min"]
     temporal_windows_df_to_save["last_90_instalments_amt_instalment_min"]= temporal_windows_df["last_90_instalments_amt_instalment_min"]
     temporal_windows_df_to_save["last_365_instalments_is_delinquency_mean"]= temporal_windows_df["last_365_instalments_is_delinquency_mean"]
+    temporal_windows_df_to_save["last_720_instalments_completion_ratio"]= temporal_windows_df["last_720_instalments_completion_ratio"]
     temporal_windows_df_to_save["last_365_instalments_completion_ratio"]= temporal_windows_df["last_365_instalments_completion_ratio"] 
     temporal_windows_df_to_save["last_90_instalments_completion_ratio"]= temporal_windows_df["last_90_instalments_completion_ratio"] 
     temporal_windows_df_to_save["last_90_instalments_amt_instalment_min"]= temporal_windows_df["last_90_instalments_amt_instalment_min"]
+
     temporal_windows_df_to_save["payment_trend"]= temporal_windows_df["payment_trend"]
+    temporal_windows_df_to_save["delincuency_trend"]= temporal_windows_df["delincuency_trend"]
+
 
 
     temporal_windows_df_to_save["id_curr"]= temporal_windows_df["id_curr"]

@@ -48,7 +48,7 @@ def main(args):
     if((args.all_models) or (any(vars(args).values()))) :
         default_proba_xgb= predict_with("xgb",test_application)
         default_proba_lgbm= predict_with("lgbm",test_application)
-        prediction_mean= (default_proba_xgb + default_proba_lgbm) / 2
+        prediction_mean= (default_proba_xgb *0.2679) + (default_proba_lgbm * 0.7321)
         create_csv_with_predictions(id_to_predict,prediction_mean)
     
 
