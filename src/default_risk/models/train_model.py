@@ -117,8 +117,8 @@ def train_model(model_class) :
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only_xgb", help="only train xgb")
-    parser.add_argument("--only_lgbm", help="only train lgbm")
+    parser.add_argument("--only_xgb", action="store_true", help="only train xgb")
+    parser.add_argument("--only_lgbm", action="store_true", help="only train lgbm")
 
     args = parser.parse_args()
     main(args)
