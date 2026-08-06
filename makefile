@@ -43,5 +43,11 @@ model: data features train
 predict: 
 	$(PYTHON) src/default_risk/models/predict_model.py
 
+predict-xgbm: 
+	$(PYTHON) src/default_risk/models/predict_model.py --only_xgb
+
+predict-lgbm: 
+	$(PYTHON) src/default_risk/models/predict_model.py --only_lgbm
+
 optimize: 
 	$(PYTHON) src/default_risk/models/optimize_model.py
