@@ -38,6 +38,7 @@ SCHEMA_JSON = METADATA_DIR / "schema.json"
 
 # Crear carpetas si no existen
 DATA_DIR.mkdir(exist_ok=True)
+RAW_DATA_DIR.mkdir(exist_ok=True)
 DUMP_FROM_NOTEBOOKS.mkdir(exist_ok=True)
 CANONIC_DIR.mkdir(exist_ok=True,parents=True)
 SPLITS_DIR.mkdir(exist_ok=True,parents=True)
