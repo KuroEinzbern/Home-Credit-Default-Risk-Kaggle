@@ -1,9 +1,9 @@
 ifeq ($(OS),Windows_NT)
     SHELL := bash.exe
-    PYTHON := default-risk/Scripts/python
+    PYTHON := venv/Scripts/python
 else
     SHELL := bash
-    PYTHON := default-risk/bin/python
+    PYTHON := venv/bin/python
 endif
 
 .PHONY: data features train model predict optimize all
