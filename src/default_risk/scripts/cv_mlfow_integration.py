@@ -18,13 +18,15 @@ import logging
 from functools import singledispatch
 import lightgbm as lgb
 import xgboost as xgb
+import joblib
+
 
 
 
 
 logging.getLogger("mlflow").setLevel(logging.ERROR)
 
-def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,silent: bool=False) -> None:
+def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[str, Any], cv: BaseCrossValidator, X: pd.DataFrame, Y: pd.Series, experiment_name: str, run_name: str,persist_feature_importance: bool =True,save_final_model: bool =True,enable_models_autlog: bool=False, enable_feature_permutation: bool=False,silent: bool=False, export_model: bool =False) -> None:
     mlflow.set_experiment(experiment_name)
     #mlflow.xgboost.autolog(log_models=enable_models_autlog, silent=silent)
     #mlflow.lightgbm.autolog(enabl)
@@ -86,7 +88,7 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
 
 
         print(f"AUC per fold= {mean_auc:.3f} ± {standar_deviation:.3f}(std), auc_score_OOF= {oof_auc_score:.3f} result of CV with {fold:d} folds. ")
-        if(save_final_model) :
+        if(save_final_model or export_model) :
             final_model= clone(original_model)
             final_model.fit(X,Y)
             input_sample = X.head(5)
@@ -94,6 +96,8 @@ def run_cv_tracked_mlflow(model: BaseEstimator | Pipeline, model_params: dict[st
             signature= infer_signature(input_sample,predict_input_sample)
             mlflow.sklearn.log_model(final_model, "final_model",signature=signature)
             save_feature_importance(final_model,X,run_name)
+            if(export_model) :
+                joblib.dump(final_model, cfg.MODELS_DIR /f'model-{run_name}.pkl')
 
     return oof_auc_score, standar_deviation
 

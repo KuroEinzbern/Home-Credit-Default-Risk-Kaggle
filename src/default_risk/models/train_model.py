@@ -103,11 +103,7 @@ def train_model(model_class) :
     X= X[features]
 
     pipeline= get_pipeline(smoothing, categorical_features, instanced_model)
-    run_cv_tracked_mlflow(pipeline,hyperparams,cv,X,Y,experiment_name,f"Pipeline_{model_class}-1.1")
-
-    pipeline.fit(X,Y)
-    joblib.dump(pipeline, cfg.MODELS_DIR /f'model-{model_class}-1.1.pkl')
-
+    run_cv_tracked_mlflow(pipeline,hyperparams,cv,X,Y,experiment_name,f"Pipeline_{model_class}-1.1",export_model=True)
     return
 
 

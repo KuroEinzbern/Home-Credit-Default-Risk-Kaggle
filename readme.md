@@ -3,7 +3,7 @@
 
 **Authors:** Alejandro Bastida, Ignacio Pugliese.  
 **Competition:**  [https://www.kaggle.com/competitions/home-credit-default-risk/](https://www.kaggle.com/competitions/home-credit-default-risk/)
-**Tech Stack:** Python, Pandas, XGBoost, LightGBM, MLflow, Optuna, Docker, GNU Make.
+**Tech Stack:** Python, Pandas, Scikit-Learn, XGBoost, LightGBM, MLflow, Optuna, Docker, GNU Make.
 
 To continue improving our machine learning skills and showcase our work as ML engineers, we solved the iconic Kaggle competition **Home Credit Default Risk**, achieving **0.798+** on the Public Leaderboard and **0.797+** on the Private Leaderboard using a single model with only **130 engineered features**.
 
@@ -32,12 +32,12 @@ The _Makefile_ provides the following commands: `data`, `features`, `train`, `pr
 -   `make train`: This step takes the Gold layer, performs feature pruning to keep the optimal set of features for the selected model, trains the model, logs the training results in MLflow, and exports the trained model through serialization.  
     (`root/models`)
     
-    **Notes:** This command supports parameters. You can specify `--only_xgb=True` or `--only_lgbm=True`. If no parameter is provided, both models will be trained and exported. Also, this step uses MLflow to track the results; therefore, the corresponding Docker container must be running.
+    **Notes:** This command have options. You can use `train-xgb` or `train-lgbm` to trail one of both models. Using just `train`, both models will be trained and exported. Also, this step uses MLflow to track the results; therefore, the corresponding Docker container must be running.
     
 -   `make predict`: This step performs inference, takes the serialized model generated in the previous step, and predicts on the test dataset, creating the submission file with the results.  
     (`root/data/master/`)
     
-    **Note:** Like the previous step, it accepts the same parameters: `--only_xgb=True`, `--only_lgbm=True`, and `all_models=True`. This last option generates predictions using an ensemble of both models.
+    **Note:** Like the previous step, it have the alternatives: `predict-xgb`, `-predict-lgbm`. Use only `predict` generates predictions using an ensemble of both models.
     
 -   `make optimize`: This step is only used to run Optuna and search for hyperparameters. The optimal hyperparameters are already configured.
 

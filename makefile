@@ -1,9 +1,9 @@
 ifeq ($(OS),Windows_NT)
     SHELL := bash.exe
-    PYTHON := venv/Scripts/python
+    PYTHON := default-risk/Scripts/python
 else
     SHELL := bash
-    PYTHON := venv/bin/python
+    PYTHON := default-risk/bin/python
 endif
 
 .PHONY: data features train model predict optimize all
@@ -31,7 +31,7 @@ features:
 train:
 	$(PYTHON) src/default_risk/models/train_model.py
 
-train-xgbm:
+train-xgb:
 	$(PYTHON) src/default_risk/models/train_model.py --only_xgb
 
 train-lgbm:
@@ -43,7 +43,7 @@ model: data features train
 predict: 
 	$(PYTHON) src/default_risk/models/predict_model.py
 
-predict-xgbm: 
+predict-xgb: 
 	$(PYTHON) src/default_risk/models/predict_model.py --only_xgb
 
 predict-lgbm: 

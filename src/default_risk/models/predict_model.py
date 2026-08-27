@@ -54,7 +54,7 @@ def main(args):
 
 
 def predict_with(model_name : str, applications_to_predict : pd.DataFrame):
-    pipeline= load_model(cfg.MODELS_DIR / f"model-{model_name}-1.1.pkl")
+    pipeline= load_model(cfg.MODELS_DIR / f"model-Pipeline_{model_name}-1.1.pkl")
     X_test= applications_to_predict.drop(columns= ["id_curr"])
     X_test= X_test.rename(columns=lambda c: re.sub(r'[^A-Za-z0-9_]', '_', c))
     X_test = cast_object_into_categoricals(X_test)
