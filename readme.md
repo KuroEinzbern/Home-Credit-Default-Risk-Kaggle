@@ -37,7 +37,7 @@ The _Makefile_ provides the following commands: `data`, `features`, `train`, `pr
 -   `make predict`: This step performs inference, takes the serialized model generated in the previous step, and predicts on the test dataset, creating the submission file with the results.  
     (`root/data/master/`)
     
-    **Note:** Like the previous step, it have the alternatives: `predict-xgb`, `-predict-lgbm`. Use only `predict` generates predictions using an ensemble of both models.
+    **Note:** Like the previous step, it have the alternatives: `predict-xgb`, `predict-lgbm`. Use only `predict` generates predictions using an ensemble of both models.
     
 -   `make optimize`: This step is only used to run Optuna and search for hyperparameters. The optimal hyperparameters are already configured.
 
